@@ -1,0 +1,49 @@
+# Define the number of cores for the wes instance
+# Options- 32, 64, 96 (default)
+cores: 96
+
+# Define the disk size to use in GB, default 500
+disk_size: 500
+
+#DEFINE the path to the google bucket path for the run
+google_bucket_path: gs://mybucket/
+
+# Uncomment the following and define the specific wes commit string to use
+# wes_commit: 44b17ff
+
+# DEFINE the samples- each sample should have a name, e.g. SAMPLE1
+# and a Google bucket path to the input file, 
+# e.g. gs://mybucket/data/sample1.fastq.gz
+# VALID INPUTS: fastq, fastq.gz
+# NOTE: for PAIRED-END fastq/fastq.gz, give both pairs to the sample:
+# SAMPLE_1_PE:
+#   - gs://mybucket/data/sample1_pair1.fastq
+#   - gs://mybucket/data/sample1_pair2.fastq
+samples:
+  mocha2-Run1-pt1-Normal:
+    - gs://mybucket/data/R1-1-N_HHTFLDSXX_R1.fastq.gz
+    - gs://mybucket/data/R1-1-N_HHTFLDSXX_R2.fastq.gz
+  mocha2-Run1-pt1-FF-Tumor:
+    - gs://mybucket/data/R1-1-F_HHTFLDSXX_R1.fastq.gz
+    - gs://mybucket/data/R1-1-F_HHTFLDSXX_R2.fastq.gz
+  mocha2-Run1-pt1-FFPE-Tumor:
+    - gs://mybucket/data/R1-1-FP_HHTFLDSXX_R1.fastq.gz
+    - gs://mybucket/data/R1-1-FP_HHTFLDSXX_R2.fastq.gz
+
+# metahseet- Group the samples into Tumor/Normal "runs"
+# each run should have a name, e.g. run_1:
+# then under each run, define a tumor and a normal sample
+# EXAMPLE:
+# metasheet:
+#  run_1:
+#    tumor: SAMPLE_Tumor
+#    normal: SAMPLE_normal
+metasheet:
+  mocha2-Run1-pt1-FF_run:
+    tumor: mocha2-Run1-pt1-FF-Tumor
+    normal: mocha2-Run1-pt1-Normal
+  mocha2-Run1-pt1-FFPE_run:
+    tumor: mocha2-Run1-pt1-FFPE-Tumor
+    normal: mocha2-Run1-pt1-Normal
+
+

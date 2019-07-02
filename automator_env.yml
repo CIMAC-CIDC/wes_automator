@@ -1,0 +1,11 @@
+name: wes_automator
+channels:
+- bioconda
+- anaconda
+- conda-forge
+- defaults
+dependencies:
+- paramiko
+- google-cloud-sdk
+- pip:
+  - google-api-python-client
