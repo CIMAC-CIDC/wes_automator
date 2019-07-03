@@ -117,6 +117,22 @@ def get_instance_ip(compute, instance_id, project, zone):
     ip_addr = result['networkInterfaces'][0]['accessConfigs'][0]['natIP']
     return ip_addr
     
+def get_disk_device_name(compute, instance_id, project, zone, disk_name):
+    "Tries to find the disk's assigned device name"
+    response = get_instance(compute, instance_id, project, zone)
+    disks = response['disks'] #an array of dictionaries, key in on source field
+    for d in disks:
+        #check if last elm in source url == disk_name
+        if d['source'].split("/")[-1] == disk_name:
+            return d['deviceName']
+    return None
+
+def set_disk_auto_delete(compute, instance_name, project, zone, disk_dev_name, auto_del_flag=True):
+    """GIVEN a compute resource, an instance_name, project, zone,
+    disk_name, will set the auto_delete flag to the given val (default True)"""
+    result = compute.instances().setDiskAutoDelete(project=project, zone=zone, instance=instance_name, autoDelete=auto_del_flag, deviceName=disk_dev_name)
+    return result
+
 def main():
     compute = googleapiclient.discovery.build('compute', 'v1')
     #TODO: update this!

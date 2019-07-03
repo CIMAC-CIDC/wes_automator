@@ -39,6 +39,13 @@ def delete(compute, disk_name, project="cidc-biofx", zone="us-east1-b"):
     #print(operation)
     return operation
 
+def get_disk(comput, project, zone, disk_name):
+    """Get the disk resource"""
+    operation = compute.disks().get(
+        project=project,
+        zone=zone,
+        disk=disk_name).execute()
+    return operation
 
 def attach_disk(compute, instance_name, disk_name, project="cidc-biofx", zone="us-east1-b"):
 

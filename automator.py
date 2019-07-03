@@ -46,7 +46,7 @@ class ssh:
             t[2].close()
             return (status, std_out, std_err)
 
-def createInstanceDisk(compute, instance_config, disk_config, ssh_config, project, zone):
+def createInstanceDisk(compute, instance_config, disk_config, ssh_config, project, zone, disk_auto_del=True):
     #create a new instance
     print("Creating instance...")
     response = instance.create(compute, instance_config['name'], 
@@ -65,11 +65,23 @@ def createInstanceDisk(compute, instance_config, disk_config, ssh_config, projec
     print("Creating disk...")
     response = disk.create(compute, disk_config['name'], disk_config['size'], 
                            project, zone)
+    #print(response)
 
     #attach disk to instance
     print("Attaching disk...")
     response = disk.attach_disk(compute, instance_config['name'], 
                                 disk_config['name'], project, zone)
+    #print(response)
+
+    #SET the auto-delete flag for the newly created disk
+    print("Setting disk auto-delete flag for disk %s" % disk_config['name'])
+    disk_dev_name = instance.get_disk_device_name(compute, instance_config['name'], project, zone, disk_config['name'])
+    if disk_dev_name:
+        print("Found disk %s attached as %s" % (disk_config['name'], disk_dev_name))
+        response = instance.set_disk_auto_delete(compute, instance_config['name'], project, zone, disk_dev_name, disk_auto_del)
+    else:
+        print("WARNING: Setting of disk auto-delete flag failed")
+    print(response.to_json())
 
     #try to establish ssh connection:
     # wait 30 secs
