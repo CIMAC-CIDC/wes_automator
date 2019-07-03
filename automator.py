@@ -142,16 +142,15 @@ def main():
     print("Successfully created instance %s" % instance_config['name'])
     print("{instanceId: %s, ip_addr: %s, disk: %s}" % (instanceId, ip_addr, disk_config['name']))
 
-    #SETUP the disk
-    #format disk
-    (status, stdin, stderr) = ssh_conn.sendCommand("sudo /home/taing/utils/setup00_prepNewDiskNoPrompt.sh %s" % options.user)
+    #SETUP the instance, disk, and wes directory
+    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator.sh %s %s" % (options.user, options.commit_str))
     if stderr:
         print(stderr)
 
-    #setup wes dir
-    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/setup01_newWESproj.sh %s" % options.commit_str)
-    if stderr:
-        print(stderr)
+    # #setup wes dir
+    # (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/setup01_newWESproj.sh %s" % options.commit_str)
+    # if stderr:
+    #     print(stderr)
 
     #setup config and metahseet
     #UPLOAD for now
