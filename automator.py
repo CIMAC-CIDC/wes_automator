@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import sys
 import time
@@ -8,6 +9,10 @@ import googleapiclient.discovery
 
 import paramiko
 from paramiko import client
+
+import instance
+import disk
+from instance import wait_for_operation
 
 class ssh:
     client = None
@@ -33,16 +38,13 @@ class ssh:
             except paramiko.SSHException:
                 status=1
 
-            std_out = str(t[1].read(), "utf-8")
-            std_err = str(t[2].read(), "utf-8")
+            #NOTE: reverting to python2 method of utf-8 conversion
+            std_out = unicode(t[1].read(), "utf-8") #str(t[1].read(), "utf-8")
+            std_err = unicode(t[2].read(), "utf-8") #str(t[2].read(), "utf-8")
             t[0].close()
             t[1].close()
             t[2].close()
             return (status, std_out, std_err)
-
-import instance
-import disk
-from instance import wait_for_operation
 
 def createInstanceDisk(compute, instance_config, disk_config, ssh_config, project, zone):
     #create a new instance
@@ -163,11 +165,11 @@ def main():
     #response = subprocess.check_output(cmd, hell=True).decode('utf-8')
 
     #download data
-    gs_path="gs://lens_bucket2/wes/speed_tests/mutsig/out.log"    
-    print("Downloading raw files...")
-    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/dnldBucket.sh %s %s" % (gs_path, "/mnt/ssd/wes/data"))
-    if stderr:
-        print(stderr)
+    # gs_path="gs://lens_bucket2/wes/speed_tests/mutsig/out.log"    
+    # print("Downloading raw files...")
+    # (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/dnldBucket.sh %s %s" % (gs_path, "/mnt/ssd/wes/data"))
+    # if stderr:
+    #     print(stderr)
 
     #try dry run
 if __name__=='__main__':
