@@ -25,5 +25,6 @@ dependencies:
 - libssh2=1.8.0
 - xz=5.2.4
 - paramiko
+- ruamel.yaml
 - pip:
   - google-api-python-client

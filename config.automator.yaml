@@ -1,8 +1,13 @@
+# Give the new instance a unique name, e.g. the wes run name
+# NOTE: "wes-auto" will automatically be prepended to this string
+instance_name: "test1"
+
 # Define the number of cores for the wes instance
-# Options- 32, 64, 96 (default)
-cores: 96
+# Options- 32 (default), 64, 96 
+cores: 8
 
 # Define the disk size to use in GB, default 500
+# the name of the persistent disk will be: "wes_auto_{instance_name}_disk"
 disk_size: 500
 
 #DEFINE the path to the google bucket path for the run
@@ -10,6 +15,7 @@ google_bucket_path: gs://mybucket/
 
 # Uncomment the following and define the specific wes commit string to use
 # wes_commit: 44b17ff
+# wes_commit: develop
 
 # DEFINE the samples- each sample should have a name, e.g. SAMPLE1
 # and a Google bucket path to the input file, 

@@ -10,6 +10,8 @@ import googleapiclient.discovery
 import paramiko
 from paramiko import client
 
+import ruamel.yaml
+
 import instance
 import disk
 from instance import wait_for_operation
@@ -94,37 +96,15 @@ def createInstanceDisk(compute, instance_config, disk_config, ssh_config, projec
     return (instanceId, ip_addr, connection)
 
 def main():
-    compute = googleapiclient.discovery.build('compute', 'v1')
-    #TODO: update this!
-    usage = "USAGE: %prog -n [instance name] -t [instance type (n1-highmem-96) -p [project (cidc-biofx)] -z [zone (us-east-1b]"
+    usage = "USAGE: %prog -c [wes_automator config yaml] -u [google account username, e.g. taing] -k [google account key path, i.e. ~/.ssh/google_cloud_enging"
     optparser = OptionParser(usage=usage)
-    optparser.add_option("-n", "--instance_name", help="instance name")
-    optparser.add_option("-i", "--image", help="image family")
-    optparser.add_option("-m", "--machine_type", default="n1-highmem-96", help="machine_type")
-    optparser.add_option("-p", "--project", default="cidc-biofx", help="google project")
-    optparser.add_option("-s", "--service_account", default="biofxvm@cidc-biofx.iam.gserviceaccount.com", help="service account (biofxvm@cidc-biofx.iam.gserviceaccount.com)")
-    optparser.add_option("-z", "--zone", default="us-east1-b", help="zone")
-
-    optparser.add_option("-d", "--disk_name", help="disk name")
-    optparser.add_option("-g", "--disk_size", help="disk size in Gb ")
+    optparser.add_option("-c", "--config", help="instance name")
     optparser.add_option("-u", "--user", help="username")
     optparser.add_option("-k", "--key_file", help="key file path")
-
-    optparser.add_option("-c", "--commit_str", default="", help="wes commit string/branch")
-
     (options, args) = optparser.parse_args(sys.argv)
 
-    if not options.instance_name:
-        print("ERROR: an unique instance name is required")
-        optparser.print_help()
-        sys.exit(-1)
-    elif not options.image:
-        print("ERROR: an image family, e.g. 'wes' 'cidc_chips' is required")
-        optparser.print_help()
-        sys.exit(-1)
-
-    if not options.disk_name or not options.disk_size:
-        print("ERROR: a disk name and a disk size is required")
+    if not options.config or not os.path.exists(options.config):
+        print("Error: missing or non-existent yaml configuration file")
         optparser.print_help()
         sys.exit(-1)
 
@@ -133,36 +113,64 @@ def main():
         optparser.print_help()
         sys.exit(-1)
 
+    # PARSE the yaml file
+    config_f = open(options.config)
+    config = ruamel.yaml.round_trip_load(config_f.read())
+    config_f.close()
 
-    instance_config= {'name': options.instance_name, 
-                      'image': options.image, 
-                      'machine_type': options.machine_type, 
-                      'serviceAcct': options.service_account}
+    #SET DEFAULTS
+    _commit_str = "" if not "wes_commit" in config else config['wes_commit']
+    _image = "wes" if not "image" in config else config['image']
+    _project = "cidc-biofx" if not "project" in config else config['project']
+    _service_account = "biofxvm@cidc-biofx.iam.gserviceaccount.com"
+    _zone = "us-east1-b" if not "zone" in config else config['zone']
+    #dictionary of machine types based on cores
+    _machine_types = {'16': 'n1-highmem-16',
+                      '32': 'n1-highmem-32',
+                      '64': 'n1-highmem-64',
+                      '96': 'n1-highmem-96'}
 
-    disk_config= {'name': options.disk_name, 
-                  'size': options.disk_size}
+    #AUTO append "wes_auto_" to instance name
+    instance_name = "-".join(['wes-auto', config['instance_name']])
+    #AUTO name attached disk
+    disk_name = "-".join([instance_name, 'disk'])
+    disk_size = config['disk_size']
+
+    #SET machine type (default to n1-standard-8 if the core count is undefined
+    machine_type = "n1-standard-8"
+    if 'cores' in config and str(config['cores']) in _machine_types:
+        machine_type = _machine_types[str(config['cores'])]
+
+    instance_config= {'name': instance_name, 
+                      'image': _image, 
+                      'machine_type': machine_type, 
+                      'serviceAcct': _service_account}
+
+    disk_config= {'name': disk_name, 
+                  'size': disk_size}
 
     ssh_config= {'user': options.user, 
                  'key': options.key_file}
 
+    #print(instance_config)
+    #print(disk_config)
+    #print(ssh_config)
+    compute = googleapiclient.discovery.build('compute', 'v1')
     (instanceId, ip_addr, ssh_conn) = createInstanceDisk(compute, 
                                                          instance_config, 
                                                          disk_config, 
                                                          ssh_config, 
-                                                         options.project, 
-                                                         options.zone)
+                                                         _project, 
+                                                         _zone)
+
     print("Successfully created instance %s" % instance_config['name'])
     print("{instanceId: %s, ip_addr: %s, disk: %s}" % (instanceId, ip_addr, disk_config['name']))
 
     #SETUP the instance, disk, and wes directory
-    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator.sh %s %s" % (options.user, options.commit_str))
+    print("Setting up the attached disk...")
+    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator.sh %s %s" % (options.user, _commit_str))
     if stderr:
         print(stderr)
-
-    # #setup wes dir
-    # (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/setup01_newWESproj.sh %s" % options.commit_str)
-    # if stderr:
-    #     print(stderr)
 
     #setup config and metahseet
     #UPLOAD for now
