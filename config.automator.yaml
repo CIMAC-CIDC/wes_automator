@@ -4,7 +4,7 @@ instance_name: "test1"
 
 # Define the number of cores for the wes instance
 # Options- 32 (default), 64, 96 
-cores: 8
+cores: 32
 
 # Define the disk size to use in GB, default 500
 # the name of the persistent disk will be: "wes_auto_{instance_name}_disk"
@@ -46,10 +46,11 @@ samples:
 #    normal: SAMPLE_normal
 metasheet:
   mocha2-Run1-pt1-FF_run:
+    normal: mocha2-Run1-pt1-Normal
     tumor: mocha2-Run1-pt1-FF-Tumor
-    normal: mocha2-Run1-pt1-Normal
   mocha2-Run1-pt1-FFPE_run:
-    tumor: mocha2-Run1-pt1-FFPE-Tumor
     normal: mocha2-Run1-pt1-Normal
+    tumor: mocha2-Run1-pt1-FFPE-Tumor
+
 
 

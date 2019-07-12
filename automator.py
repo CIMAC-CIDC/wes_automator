@@ -4,6 +4,7 @@ import sys
 import time
 import subprocess
 from optparse import OptionParser
+from string import Template
 
 import googleapiclient.discovery
 
@@ -130,6 +131,7 @@ def main():
                       '64': 'n1-highmem-64',
                       '96': 'n1-highmem-96'}
 
+    #SHOULD I error check these?
     #AUTO append "wes_auto_" to instance name
     instance_name = "-".join(['wes-auto', config['instance_name']])
     #AUTO name attached disk
@@ -140,6 +142,11 @@ def main():
     machine_type = "n1-standard-8"
     if 'cores' in config and str(config['cores']) in _machine_types:
         machine_type = _machine_types[str(config['cores'])]
+
+    #The google bucket path is in the form of gs:// ...
+    #The normal_bucket path is the google bucket path but without the gs://
+    google_bucket_path = config['google_bucket_path']
+    normal_bucket_path = google_bucket_path.replace("gs://","") #remove gsL//
 
     instance_config= {'name': instance_name, 
                       'image': _image, 
@@ -165,31 +172,95 @@ def main():
 
     print("Successfully created instance %s" % instance_config['name'])
     print("{instanceId: %s, ip_addr: %s, disk: %s}" % (instanceId, ip_addr, disk_config['name']))
-
+#------------------------------------------------------------------------------
     #SETUP the instance, disk, and wes directory
     print("Setting up the attached disk...")
     (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator.sh %s %s" % (options.user, _commit_str))
     if stderr:
         print(stderr)
+#------------------------------------------------------------------------------
+    #TODO: make this into a fn
+    # download the data to the bucket directory
+    print("Transferring raw files to the bucket...")
+    # PUT the files in {google_bucket_path}/data
+    # and build up new sample dictionary (tmp)
+    tmp = {}
+    for sample in config['samples']:
+        for fq in config['samples'][sample]:
+            #add this to the samples dictionary
+            if sample not in tmp:
+                tmp[sample] = []
+            # get the filename, e.g. XXX.fq.gz
+            filename = fq.split("/")[-1]
+            tmp[sample].append("data/%s" % filename)
 
-    #setup config and metahseet
-    #UPLOAD for now
-    #cmd = 'scp -i %s %s %s@%s:%s' % (options.key_file, "config.yaml",
-    #                                 options.user, ip_addr,
-    #                                 "/mnt/ssd/wes/")
-    #response = subprocess.check_output(cmd, hell=True).decode('utf-8')
-    #cmd = 'scp -i %s %s %s@%s:%s' % (options.key_file, "metasheet.csv",
-    #                                 options.user, ip_addr,
-    #                                 "/mnt/ssd/wes/")
-    #response = subprocess.check_output(cmd, hell=True).decode('utf-8')
+            if google_bucket_path.endswith("/"):
+                dst = "%sdata/" % google_bucket_path
+            else:
+                dst = "%s/data/" % google_bucket_path
 
-    #download data
-    # gs_path="gs://lens_bucket2/wes/speed_tests/mutsig/out.log"    
-    # print("Downloading raw files...")
-    # (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/dnldBucket.sh %s %s" % (gs_path, "/mnt/ssd/wes/data"))
-    # if stderr:
-    #     print(stderr)
+            cmd = [ "gsutil", "-m", "cp", fq, dst]
+            print(" ".join(cmd))
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
+                                    stderr=subprocess.PIPE)
+            (out, error) = proc.communicate()
+            if proc.returncode != 0:
+                print("Error %s:" % proc.returncode)
+                #print(out)
+                print(error)
 
-    #try dry run
+#------------------------------------------------------------------------------
+    # Write a config (.config.yaml) and a meta (.metasheet.csv) locally
+    # then upload it to the instance
+    # CONFIG.yaml
+    print("Setting up the config.yaml...")
+    # parse the wes_config.yaml template
+    wes_config_f = open('wes_config.yaml')
+    wes_config = ruamel.yaml.round_trip_load(wes_config_f.read())
+    wes_config_f.close()
+    
+    # SET the config to the samples dictionary we built up
+    wes_config['samples'] = tmp
+    #set remote path
+    if normal_bucket_path.endswith("/"):
+        wes_config['remote_path'] = normal_bucket_path
+    else:
+        wes_config['remote_path'] = normal_bucket_path + "/"
+    #print(wes_config)
+
+    #WRITE this to hidden file .config.yaml
+    print("Setting up the metasheet...")
+    out = open(".config.yaml","w")
+    #NOTE: this writes the comments for the metasheet as well, but ignore it
+    ruamel.yaml.round_trip_dump(wes_config, out)
+    out.close()
+
+    # METASHEET.csv
+    # write the metasheet to .metasheet.csv
+    out = open(".metasheet.csv","w")
+    out.write("RunName,Normal,Tumor\n")
+    for run in config['metasheet']:
+        normal = config['metasheet'][run]['normal']
+        tumor = config['metasheet'][run]['tumor']
+        out.write("%s\n" % ','.join([run, normal, tumor]))
+    out.close()
+#------------------------------------------------------------------------------
+    #UPLOAD .config.yaml and .metasheet.csv
+    #NOTE: we are skip checking .ssh/known_hosts
+    #really should make this a fn
+    for f in ['config.yaml', 'metasheet.csv']:
+        cmd = ['scp', "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", '-i', options.key_file, ".%s" % f, "%s@%s:%s%s" % (options.user, ip_addr, "/mnt/ssd/wes/", f)]
+        print(" ".join(cmd))
+        proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        if proc.returncode != 0:
+            print("Error %s:" % proc.returncode)
+            print(error)
+
+    #RUN
+    print("Running...")
+    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run.sh %s %s" % (normal_bucket_path, str(config['cores'])))
+    if stderr:
+        print(stderr)
+
 if __name__=='__main__':
     main()
