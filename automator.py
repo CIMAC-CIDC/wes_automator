@@ -30,14 +30,14 @@ class ssh:
         # Make the connection
         self.client.connect(address, username=username, key_filename=key_filename, look_for_keys=False)
 
-    def sendCommand(self, command):
+    def sendCommand(self, command, timeout=None):
         # Check if connection is made previously
         #ref: https://www.programcreek.com/python/example/7495/paramiko.SSHException
         #example 3
         if(self.client):
             status = 0
             try:
-                t = self.client.exec_command(command)
+                t = self.client.exec_command(command, timeout)
             except paramiko.SSHException:
                 status=1
 
@@ -258,7 +258,7 @@ def main():
 
     #RUN
     print("Running...")
-    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run.sh %s %s" % (normal_bucket_path, str(config['cores'])))
+    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run.sh %s %s %s" % (_project, normal_bucket_path, str(config['cores'])))
     if stderr:
         print(stderr)
 

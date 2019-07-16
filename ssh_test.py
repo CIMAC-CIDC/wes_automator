@@ -28,14 +28,14 @@ class ssh:
         # Make the connection
         self.client.connect(address, username=username, key_filename=key_filename, look_for_keys=False)
 
-    def sendCommand(self, command):
+    def sendCommand(self, command, timeout=None):
         # Check if connection is made previously
         #ref: https://www.programcreek.com/python/example/7495/paramiko.SSHException
         #example 3
         if(self.client):
             status = 0
             try:
-                t = self.client.exec_command(command)
+                t = self.client.exec_command(command, timeout)
             except paramiko.SSHException:
                 status=1
 
@@ -84,6 +84,9 @@ def main():
     optparser.add_option("-i", "--ip", help="instance ip address")
     optparser.add_option("-u", "--user", help="username")
     optparser.add_option("-k", "--key_file", help="key file path")
+    optparser.add_option("-b", "--normal_bucket_path", help="normalized bucket path")
+    optparser.add_option("-c", "--cores", help="cores")
+    optparser.add_option("-p", "--project", default="cidc-biofx", help="project")
     (options, args) = optparser.parse_args(sys.argv)
 
     if (not options.ip or not options.user or not options.key_file):
@@ -92,11 +95,12 @@ def main():
 
     #try to establish a connection
     connection = ssh(options.ip, options.user, options.key_file)
-    (status, stdin, stderr) = connection.sendCommand("/mnt")
+    time_to_wait = None #10mins
+    (status, stdin, stderr) = connection.sendCommand("/home/taing/utils/wes_automator_run.sh %s %s %s" % (options.project, options.normal_bucket_path, options.cores), time_to_wait)
     if stderr:
-        print("ERROR: %s " % str(stderr,"utf-8"))
+        print("ERROR: %s " % unicode(stderr, "utf-8"))#str(stderr,"utf-8"))
     else:
-        print(str(stdin, 'utf-8'))
+        print(unicode(stdin, "utf-8"))#str(stdin, 'utf-8'))
 
 if __name__=='__main__':
     main()
