@@ -96,6 +96,40 @@ def createInstanceDisk(compute, instance_config, disk_config, ssh_config, projec
 
     return (instanceId, ip_addr, connection)
 
+def transferRawFiles(samples, bucket_path):
+    """Transfers the samples from their source location to the wes project 
+    location (a google bucket)
+    RETIRNS: a dictionary of samples with their new data paths (which are 
+    relative to the wes project location i.e. google bucket path
+    """
+    # PUT the files in {bucket_path}/data
+    # and build up new sample dictionary (tmp)
+    tmp = {}
+    for sample in samples:
+        for fq in samples[sample]:
+            #add this to the samples dictionary
+            if sample not in tmp:
+                tmp[sample] = []
+            # get the filename, e.g. XXX.fq.gz
+            filename = fq.split("/")[-1]
+            tmp[sample].append("data/%s" % filename)
+
+            if bucket_path.endswith("/"):
+                dst = "%sdata/" % bucket_path
+            else:
+                dst = "%s/data/" % bucket_path
+
+            cmd = [ "gsutil", "-m", "cp", fq, dst]
+            print(" ".join(cmd))
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
+                                    stderr=subprocess.PIPE)
+            (out, error) = proc.communicate()
+            if proc.returncode != 0:
+                print("Error %s:" % proc.returncode)
+                #print(out)
+                print(error)
+    return tmp
+
 def main():
     usage = "USAGE: %prog -c [wes_automator config yaml] -u [google account username, e.g. taing] -k [google account key path, i.e. ~/.ssh/google_cloud_enging"
     optparser = OptionParser(usage=usage)
@@ -179,36 +213,9 @@ def main():
     if stderr:
         print(stderr)
 #------------------------------------------------------------------------------
-    #TODO: make this into a fn
-    # download the data to the bucket directory
+    # transfer the data to the bucket directory
     print("Transferring raw files to the bucket...")
-    # PUT the files in {google_bucket_path}/data
-    # and build up new sample dictionary (tmp)
-    tmp = {}
-    for sample in config['samples']:
-        for fq in config['samples'][sample]:
-            #add this to the samples dictionary
-            if sample not in tmp:
-                tmp[sample] = []
-            # get the filename, e.g. XXX.fq.gz
-            filename = fq.split("/")[-1]
-            tmp[sample].append("data/%s" % filename)
-
-            if google_bucket_path.endswith("/"):
-                dst = "%sdata/" % google_bucket_path
-            else:
-                dst = "%s/data/" % google_bucket_path
-
-            cmd = [ "gsutil", "-m", "cp", fq, dst]
-            print(" ".join(cmd))
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
-                                    stderr=subprocess.PIPE)
-            (out, error) = proc.communicate()
-            if proc.returncode != 0:
-                print("Error %s:" % proc.returncode)
-                #print(out)
-                print(error)
-
+    tmp = transferRawFiles(config['samples'], google_bucket_path)
 #------------------------------------------------------------------------------
     # Write a config (.config.yaml) and a meta (.metasheet.csv) locally
     # then upload it to the instance
@@ -252,6 +259,7 @@ def main():
         cmd = ['scp', "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", '-i', options.key_file, ".%s" % f, "%s@%s:%s%s" % (options.user, ip_addr, "/mnt/ssd/wes/", f)]
         print(" ".join(cmd))
         proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        (out, error) = proc.communicate()
         if proc.returncode != 0:
             print("Error %s:" % proc.returncode)
             print(error)

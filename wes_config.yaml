@@ -10,7 +10,8 @@ ref: "cidc_wes/ref.yaml"
 remote_path: "bucket_name/path/to/wes_project/"
 
 #Path to sentieon binary
-sentieon_path: "/home/taing/sentieon/sentieon-genomics-201808.07/bin/"
+#NOTE: sentieon version 201808.07 has errors, so reverting to 201808.05
+sentieon_path: "/home/taing/sentieon/sentieon-genomics-201808.05/bin/"
 
 #Tell us what assembly to use (!! MUST be defined in chips/ref.yaml !!)
 assembly: hg38

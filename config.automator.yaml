@@ -1,3 +1,7 @@
+###############################################################################
+# Automator configuration file
+###############################################################################
+
 # Give the new instance a unique name, e.g. the wes run name
 # NOTE: "wes-auto" will automatically be prepended to this string
 instance_name: "test1"
