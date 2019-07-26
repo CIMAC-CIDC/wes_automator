@@ -84,7 +84,7 @@ def createInstanceDisk(compute, instance_config, disk_config, ssh_config, projec
         response = instance.set_disk_auto_delete(compute, instance_config['name'], project, zone, disk_dev_name, disk_auto_del)
     else:
         print("WARNING: Setting of disk auto-delete flag failed")
-    print(response.to_json())
+    #print(response.to_json())
 
     #try to establish ssh connection:
     # wait 30 secs
@@ -270,5 +270,7 @@ def main():
     if stderr:
         print(stderr)
 
+    print("The instance is running at the following IP: %s" % ip_addr)
+    print("please log into this instance and to check-in on the run")
 if __name__=='__main__':
     main()
