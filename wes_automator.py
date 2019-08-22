@@ -89,7 +89,7 @@ def createInstanceDisk(compute, instance_config, disk_config, ssh_config, projec
     #try to establish ssh connection:
     # wait 30 secs
     print("Establishing connection...")
-    time.sleep(30)
+    time.sleep(60)
     connection = ssh(ip_addr, ssh_config['user'], ssh_config['key'])
     #TEST connection
     #(status, stdin, stderr) = connection.sendCommand("ls /mnt")
