@@ -271,7 +271,8 @@ def main():
     # CONFIG.yaml
     print("Setting up the config.yaml...")
     # parse the wes_config.yaml template
-    wes_config_f = open('wes_config.yaml')
+    #NOTE: using the local version of the config
+    wes_config_f = open('wes_config.local.yaml')
     wes_config = ruamel.yaml.round_trip_load(wes_config_f.read())
     wes_config_f.close()
     
