@@ -76,6 +76,15 @@ def createInstanceDisk(compute, instance_config, disk_config, ssh_config, projec
                                 disk_config['name'], project, zone)
     #print(response)
 
+
+    #try to establish ssh connection:
+    # wait 30 secs
+    print("Establishing connection...")
+    time.sleep(60)
+    connection = ssh(ip_addr, ssh_config['user'], ssh_config['key'])
+    #TEST connection
+    #(status, stdin, stderr) = connection.sendCommand("ls /mnt")
+
     #SET the auto-delete flag for the newly created disk
     print("Setting disk auto-delete flag for disk %s" % disk_config['name'])
     disk_dev_name = instance.get_disk_device_name(compute, instance_config['name'], project, zone, disk_config['name'])
@@ -86,17 +95,11 @@ def createInstanceDisk(compute, instance_config, disk_config, ssh_config, projec
         print("WARNING: Setting of disk auto-delete flag failed")
     #print(response.to_json())
 
-    #try to establish ssh connection:
-    # wait 30 secs
-    print("Establishing connection...")
-    time.sleep(60)
-    connection = ssh(ip_addr, ssh_config['user'], ssh_config['key'])
-    #TEST connection
-    #(status, stdin, stderr) = connection.sendCommand("ls /mnt")
-
     return (instanceId, ip_addr, connection)
 
-def transferRawFiles(samples, bucket_path):
+#NOTE: lots of redundancy betwwen this and the local version, but for now
+#saving a complete working copy
+def transferRawFiles_remote(samples, bucket_path):
     """Transfers the samples from their source location to the wes project 
     location (a google bucket)
     RETIRNS: a dictionary of samples with their new data paths (which are 
@@ -128,6 +131,51 @@ def transferRawFiles(samples, bucket_path):
                 print("Error %s:" % proc.returncode)
                 #print(out)
                 print(error)
+    return tmp
+
+def transferRawFiles_local(samples, bucket_path, ssh_conn):
+    """Transfers the samples from their source location to the wes project 
+    location (a google bucket)
+    RETIRNS: a dictionary of samples with their new data paths (which are 
+    relative to the wes project location i.e. google bucket path
+    """
+    # PUT the files in {bucket_path}/data
+    # and build up new sample dictionary (tmp)
+    tmp = {}
+    for sample in samples:
+        for fq in samples[sample]:
+            #add this to the samples dictionary
+            if sample not in tmp:
+                tmp[sample] = []
+            # get the filename, e.g. XXX.fq.gz
+            filename = fq.split("/")[-1]
+            tmp[sample].append("data/%s" % filename)
+
+            #HARDCODED location of where the data files are expected--
+            #no trailing /
+            dst = "/mnt/ssd/wes/data"
+            #KEEPING remote stuff just in case
+            #if bucket_path.endswith("/"):
+            #    dst = "%sdata/" % bucket_path
+            #else:
+            #    dst = "%s/data/" % bucket_path
+
+            #MAKE the data directory
+            (status, stdin, stderr) = ssh_conn.sendCommand("mkdir -p /mnt/ssd/wes/data")
+            cmd = " ".join([ "gsutil", "-m", "cp", fq, dst])
+            print(cmd)
+            (status, stdin, stderr) = ssh_conn.sendCommand(cmd)
+            if stderr:
+                print(stderr)
+            
+            #NOTE: need to keep cmd as an list, not a string
+            #proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
+            #                        stderr=subprocess.PIPE)
+            #(out, error) = proc.communicate()
+            #if proc.returncode != 0:
+            #    print("Error %s:" % proc.returncode)
+            #    #print(out)
+            #    print(error)
     return tmp
 
 def main():
@@ -215,7 +263,8 @@ def main():
 #------------------------------------------------------------------------------
     # transfer the data to the bucket directory
     print("Transferring raw files to the bucket...")
-    tmp = transferRawFiles(config['samples'], google_bucket_path)
+    #NOTE: google_bucket_path is not needed for local runs
+    tmp = transferRawFiles_local(config['samples'],google_bucket_path,ssh_conn)
 #------------------------------------------------------------------------------
     # Write a config (.config.yaml) and a meta (.metasheet.csv) locally
     # then upload it to the instance
@@ -228,12 +277,13 @@ def main():
     
     # SET the config to the samples dictionary we built up
     wes_config['samples'] = tmp
-    #set remote path
-    if normal_bucket_path.endswith("/"):
-        wes_config['remote_path'] = normal_bucket_path
-    else:
-        wes_config['remote_path'] = normal_bucket_path + "/"
-    #print(wes_config)
+    #NOTE: NOT needed for local runs
+    ##set remote path
+    #if normal_bucket_path.endswith("/"):
+    #    wes_config['remote_path'] = normal_bucket_path
+    #else:
+    #    wes_config['remote_path'] = normal_bucket_path + "/"
+    ##print(wes_config)
 
     #WRITE this to hidden file .config.yaml
     print("Setting up the metasheet...")
@@ -266,7 +316,8 @@ def main():
 
     #RUN
     print("Running...")
-    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run.sh %s %s %s" % (_project, normal_bucket_path, str(config['cores'])))
+    #NOTE: _project and _bucket_path are not needed for local runs
+    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run_local.sh %s %s %s" % (_project, normal_bucket_path, str(config['cores'])))
     if stderr:
         print(stderr)
 
