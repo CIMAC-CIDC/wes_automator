@@ -112,11 +112,27 @@ def get_instance(compute, instance_id, project, zone):
     result = compute.instances().get(project=project, zone=zone, instance=instance_id).execute()
     return result
 
+def get_instance_from_name(compute, machine_name, project, zone):
+    """Helper fn to wrap looking up the ID using the name
+    may be costly b/c it calls a list all instances and then tries to pull out
+    the target instance"""
+    instance = None
+    result = list_instances(compute, project, zone) #calling list_instances fn
+    for (i,r) in enumerate(result):
+        if r['name'] == machine_name:
+            instance = r
+    return instance
+    
 def get_instance_ip(compute, instance_id, project, zone):
     result = get_instance(compute, instance_id, project, zone)
     ip_addr = result['networkInterfaces'][0]['accessConfigs'][0]['natIP']
     return ip_addr
-    
+
+def get_instance_ip_from_name(compute, machine_name, project, zone):
+    result = get_instance_from_name(compute, machine_name, project, zone)
+    ip_addr = result['networkInterfaces'][0]['accessConfigs'][0]['natIP']
+    return ip_addr
+
 def get_disk_device_name(compute, instance_id, project, zone, disk_name):
     "Tries to find the disk's assigned device name"
     response = get_instance(compute, instance_id, project, zone)
@@ -127,6 +143,8 @@ def get_disk_device_name(compute, instance_id, project, zone, disk_name):
             return d['deviceName']
     return None
 
+#WARNING: THE FN below DOES NOT ACTUAKKY work--the call is correct but the 
+# google api is broken!
 def set_disk_auto_delete(compute, instance_name, project, zone, disk_dev_name, auto_del_flag=True):
     """GIVEN a compute resource, an instance_name, project, zone,
     disk_name, will set the auto_delete flag to the given val (default True)"""
