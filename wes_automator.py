@@ -87,13 +87,17 @@ def createInstanceDisk(compute, instance_config, disk_config, ssh_config, projec
 
     #SET the auto-delete flag for the newly created disk
     print("Setting disk auto-delete flag for disk %s" % disk_config['name'])
-    disk_dev_name = instance.get_disk_device_name(compute, instance_config['name'], project, zone, disk_config['name'])
-    if disk_dev_name:
-        print("Found disk %s attached as %s" % (disk_config['name'], disk_dev_name))
-        response = instance.set_disk_auto_delete(compute, instance_config['name'], project, zone, disk_dev_name, disk_auto_del)
-    else:
-        print("WARNING: Setting of disk auto-delete flag failed")
-    #print(response.to_json())
+    #NOTE: using the instance.set_disk_auto_delete fn doesn't work
+    #TRY manual call
+    #NOTE: the attached disk is always going to be persistent-disk-1
+    cmd = [ "gcloud", "compute", "instances", "set-disk-auto-delete", instance_config['name'], "--device-name", "persistent-disk-1", "--zone", zone]
+    print(" ".join(cmd))
+    proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    (out, error) = proc.communicate()
+    if proc.returncode != 0:
+        print("Error %s:" % proc.returncode)
+        #print(out)
+        print(error)
 
     return (instanceId, ip_addr, connection)
 
@@ -278,12 +282,16 @@ def main():
     
     # SET the config to the samples dictionary we built up
     wes_config['samples'] = tmp
-    #NOTE: NOT needed for local runs
-    ##set remote path
-    #if normal_bucket_path.endswith("/"):
-    #    wes_config['remote_path'] = normal_bucket_path
-    #else:
-    #    wes_config['remote_path'] = normal_bucket_path + "/"
+    ##set transfer path
+    transfer_path = normal_bucket_path
+    #check if transfer_path has gs:// in front
+    if not transfer_path.startswith("gs://"):
+        transfer_path = "gs://%s" % transfer_path
+
+    if transfer_path.endswith("/"):
+        wes_config['transfer_path'] = transfer_path
+    else:
+        wes_config['transfer_path'] = transfer_path + "/"
     ##print(wes_config)
 
     #WRITE this to hidden file .config.yaml

@@ -9,6 +9,11 @@ ref: "cidc_wes/ref.yaml"
 # OTHERWISE, if running locally, LEAVE it commented out
 # remote_path: "bucket_name/path/to/wes_project/"
 
+# The transfer bucket is used by the wes_automator transfer script to
+# tx the run AFTER a wes_automator run
+# transfer_bucket: "gs://some/bucket/path/wes_project/"
+transfer_path: "gs://some/bucket/path/wes_project/"
+
 #Path to sentieon binary
 #NOTE: sentieon version 201808.07 has errors, so reverting to 201808.05
 sentieon_path: "/home/taing/sentieon/sentieon-genomics-201808.05/bin/"
