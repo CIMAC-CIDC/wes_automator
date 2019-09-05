@@ -9,6 +9,18 @@ ref: "cidc_wes/ref.yaml"
 # OTHERWISE, if running locally, LEAVE it commented out
 remote_path: "bucket_name/path/to/wes_project/"
 
+# The transfer bucket is used by the wes_automator transfer script to
+# tx the run AFTER a wes_automator run
+# transfer_bucket: "gs://some/bucket/path/wes_project/"
+# transfer_path: "gs://some/bucket/path/wes_project/"
+
+# CIMAC center: choices are {'mocha', 'mda', 'broad' (default)}
+#cimac_center: 'broad'
+
+# SOMATIC CALLER to use, options are {tnsnv, tnhaplotyper2, tnscope}
+# tnhaplotyper2 is the default EVEN if the somatic_caller param is NOT defined
+somatic_caller: tnhaplotyper2
+
 #Path to sentieon binary
 #NOTE: sentieon version 201808.07 has errors, so reverting to 201808.05
 sentieon_path: "/home/taing/sentieon/sentieon-genomics-201808.05/bin/"
