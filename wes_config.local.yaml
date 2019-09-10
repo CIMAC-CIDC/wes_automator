@@ -19,7 +19,7 @@ transfer_path: "gs://some/bucket/path/wes_project/"
 
 # SOMATIC CALLER to use, options are {tnsnv, tnhaplotyper2, tnscope}
 # tnhaplotyper2 is the default EVEN if the somatic_caller param is NOT defined
-somatic_caller: tnhaplotyper2
+somatic_caller: tnscope
 
 #Path to sentieon binary
 #NOTE: sentieon version 201808.07 has errors, so reverting to 201808.05
