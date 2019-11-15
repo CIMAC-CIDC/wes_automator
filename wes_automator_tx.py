@@ -5,6 +5,7 @@ import time
 import subprocess
 from optparse import OptionParser
 from string import Template
+import re
 
 import googleapiclient.discovery
 
@@ -49,6 +50,31 @@ class ssh:
             t[2].close()
             return (status, std_out, std_err)
 
+def checkForEmptyFiles(bucket_path):
+    """Returns a list of any empty files that are found, ie. files that
+    potentially need to be re-transferred.
+    NOTE: wes generates a few empty files as output to rules--so not every
+    empty file is caused by a transfer error"""
+    cmd=["gsutil ls -lR %s" % bucket_path] #DIDN'T work if split cmd into parts
+    #print(" ".join(cmd))
+    proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+    stdout, stderr = proc.communicate()
+    
+    ls = []
+    if stderr:
+        print("checkForEmptyFiles: ERROR MSG")
+        print(stderr)
+    else:
+        #process output for empty files
+        for l in stdout.split("\n"):
+            if l:
+                #tmp = re.match("gs://(\S)+", l.strip()) #gs part
+                #tmp = re.match('.+(\d{4}[-/]\d{2}[-/]\d{2}).+', l.strip()) #date part
+                #ALL together!
+                tmp = re.match("(\d+).+(\d{4}[-/]\d{2}[-/]\d{2}).+(gs://(\S)+)", l.strip())
+                if tmp and tmp.group(1) == "0": #EMPTY file!
+                    ls.append(tmp.group(3))
+    return(ls)
 
 def main():
     usage = "USAGE: %prog -c [wes_automator config yaml] -u [google account username, e.g. taing] -k [google account key path, i.e. ~/.ssh/google_cloud_enging"
@@ -73,17 +99,20 @@ def main():
     config = ruamel.yaml.round_trip_load(config_f.read())
     config_f.close()
 
-    #SET DEFAULTS
-    _commit_str = "" if not "wes_commit" in config else config['wes_commit']
-    _image = "wes" if not "image" in config else config['image']
     _project = "cidc-biofx" if not "project" in config else config['project']
-    _service_account = "biofxvm@cidc-biofx.iam.gserviceaccount.com"
     _zone = "us-east1-b" if not "zone" in config else config['zone']
+
+    #LEN: I don't think I need this section!
+    #SET DEFAULTS
+    #_commit_str = "" if not "wes_commit" in config else config['wes_commit']
+    #_image = "wes" if not "image" in config else config['image']
+    #_service_account = "biofxvm@cidc-biofx.iam.gserviceaccount.com"
+
     #dictionary of machine types based on cores
-    _machine_types = {'16': 'n1-highmem-16',
-                      '32': 'n1-highmem-32',
-                      '64': 'n1-highmem-64',
-                      '96': 'n1-highmem-96'}
+    #_machine_types = {'16': 'n1-highmem-16',
+    #                  '32': 'n1-highmem-32',
+    #                  '64': 'n1-highmem-64',
+    #                  '96': 'n1-highmem-96'}
 
     #GET the instance
     instance_name = "-".join(['wes-auto', config['instance_name']])
@@ -99,7 +128,7 @@ def main():
     if stderr:
         print(stderr)
 
-    print("Transfer initiated.  please check instance @ %s" ip_addr)
+    print("Transfer initiated.  please check instance @ %s" % ip_addr)
 
 if __name__=='__main__':
     main()
