@@ -49,6 +49,30 @@ class ssh:
             t[2].close()
             return (status, std_out, std_err)
 
+def checkConfig(wes_auto_config):
+    """Does some basic checks on the config file
+    INPUT config file parsed as a dictionary
+    returns True if everything is ok
+    otherwise exits!
+    """
+    required_fields = ["instance_name", "cores", "disk_size",
+                       "google_bucket_path", "samples", "metasheet"]
+    optional_fields = ['wes_commit']
+
+    missing = []
+    for f in required_fields:
+        if not f in wes_auto_config or not wes_auto_config[f]:
+            missing.append(f)
+
+    #NOTE: can add additional checks like google_bucket_path is in the form
+    #of 'gs://...' etc.  but this is a start
+
+    if missing:
+        print("ERROR: Please define these required params in the automator config file:\n%s" % ", ".join(missing))
+        sys.exit()
+    else:
+        return True
+
 def createInstanceDisk(compute, instance_config, disk_config, ssh_config, project, zone, disk_auto_del=True):
     #create a new instance
     print("Creating instance...")
@@ -205,6 +229,9 @@ def main():
     config = ruamel.yaml.round_trip_load(config_f.read())
     config_f.close()
 
+    #CHECK config
+    checkConfig(config)
+
     #SET DEFAULTS
     _commit_str = "" if not "wes_commit" in config else config['wes_commit']
     _image = "wes" if not "image" in config else config['image']
@@ -212,7 +239,10 @@ def main():
     _service_account = "biofxvm@cidc-biofx.iam.gserviceaccount.com"
     _zone = "us-east1-b" if not "zone" in config else config['zone']
     #dictionary of machine types based on cores
-    _machine_types = {'16': 'n1-highmem-16',
+    _machine_types = {'2': 'n1-highmem-2',
+                      '4': 'n1-highmem-4',
+                      '8': 'n1-highmem-8',
+                      '16': 'n1-highmem-16',
                       '32': 'n1-highmem-32',
                       '64': 'n1-highmem-64',
                       '96': 'n1-highmem-96'}
