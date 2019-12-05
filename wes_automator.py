@@ -64,6 +64,29 @@ def checkConfig(wes_auto_config):
         if not f in wes_auto_config or not wes_auto_config[f]:
             missing.append(f)
 
+    #check if the sample fastq/bam files are valid
+    invalid_bucket_paths = []
+    print("Checking the sample file paths...")
+    samples = wes_auto_config['samples']
+    for sample in samples:
+        for f in samples[sample]:
+            cmd = [ "gsutil", "ls", f]
+            print(" ".join(cmd))
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
+                                    stderr=subprocess.PIPE)
+            (out, error) = proc.communicate()
+            if proc.returncode != 0:
+                #print("Error %s:" % proc.returncode)
+                #print(out)
+                print(error)
+                invalid_bucket_paths.append(f)
+
+    if invalid_bucket_paths:
+        print("Some sample file bucket files are invalid or do not exist, please correct this.")
+        for f in invalid_bucket_paths:
+            print(f)
+        sys.exit()
+
     #NOTE: can add additional checks like google_bucket_path is in the form
     #of 'gs://...' etc.  but this is a start
 
@@ -161,32 +184,26 @@ def transferRawFiles_remote(samples, bucket_path):
                 print(error)
     return tmp
 
-def transferRawFiles_local(samples, bucket_path, ssh_conn):
-    """Transfers the samples from their source location to the wes project 
-    location (a google bucket)
-    RETIRNS: a dictionary of samples with their new data paths (which are 
-    relative to the wes project location i.e. google bucket path
+def transferRawFiles_local(samples, ssh_conn):
+    """Goes through each FILE associated with each sample and issues
+    a cmd from the instance to download the file to /mnt/ssd/wes/data
+
+    RETIRNS: a dictionary of samples with their new data paths
     """
-    # PUT the files in {bucket_path}/data
-    # and build up new sample dictionary (tmp)
+
     tmp = {}
     for sample in samples:
         for fq in samples[sample]:
             #add this to the samples dictionary
             if sample not in tmp:
                 tmp[sample] = []
-            # get the filename, e.g. XXX.fq.gz
+            # get the filename, e.g. XXX.fq.gz or XXX.bsm
             filename = fq.split("/")[-1]
             tmp[sample].append("data/%s" % filename)
 
             #HARDCODED location of where the data files are expected--
             #no trailing /
             dst = "/mnt/ssd/wes/data"
-            #KEEPING remote stuff just in case
-            #if bucket_path.endswith("/"):
-            #    dst = "%sdata/" % bucket_path
-            #else:
-            #    dst = "%s/data/" % bucket_path
 
             #MAKE the data directory
             (status, stdin, stderr) = ssh_conn.sendCommand("mkdir -p /mnt/ssd/wes/data")
@@ -196,14 +213,6 @@ def transferRawFiles_local(samples, bucket_path, ssh_conn):
             if stderr:
                 print(stderr)
             
-            #NOTE: need to keep cmd as an list, not a string
-            #proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
-            #                        stderr=subprocess.PIPE)
-            #(out, error) = proc.communicate()
-            #if proc.returncode != 0:
-            #    print("Error %s:" % proc.returncode)
-            #    #print(out)
-            #    print(error)
     return tmp
 
 def main():
@@ -297,8 +306,7 @@ def main():
 #------------------------------------------------------------------------------
     # transfer the data to the bucket directory
     print("Transferring raw files to the bucket...")
-    #NOTE: google_bucket_path is not needed for local runs
-    tmp = transferRawFiles_local(config['samples'],google_bucket_path,ssh_conn)
+    tmp = transferRawFiles_local(config['samples'], ssh_conn)
 #------------------------------------------------------------------------------
     # Write a config (.config.yaml) and a meta (.metasheet.csv) locally
     # then upload it to the instance
