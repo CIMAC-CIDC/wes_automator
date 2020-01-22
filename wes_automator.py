@@ -243,6 +243,7 @@ def main():
 
     #SET DEFAULTS
     _commit_str = "" if not "wes_commit" in config else config['wes_commit']
+    _somatic_caller = "" if not "somatic_caller" in config else config['somatic_caller']
     _image = "wes" if not "image" in config else config['image']
     _project = "cidc-biofx" if not "project" in config else config['project']
     _service_account = "biofxvm@cidc-biofx.iam.gserviceaccount.com"
@@ -320,6 +321,8 @@ def main():
     
     # SET the config to the samples dictionary we built up
     wes_config['samples'] = tmp
+    # ADD somatic caller
+    wes_config['somatic_caller'] = _somatic_caller
     ##set transfer path
     transfer_path = normal_bucket_path
     #check if transfer_path has gs:// in front
