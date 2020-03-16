@@ -2,9 +2,10 @@
 import os
 import sys
 import time
+import string
+import random
 import subprocess
 from optparse import OptionParser
-from string import Template
 
 import googleapiclient.discovery
 
@@ -336,15 +337,19 @@ def main():
     ##print(wes_config)
 
     #WRITE this to hidden file .config.yaml
-    print("Setting up the metasheet...")
-    out = open(".config.yaml","w")
+    print("Setting up the config and metasheet...")
+    #prepend a random string to these files
+    salt=''.join(random.choice(string.ascii_lowercase) for i in range(6))
+    print("writing %s" % (".config.%s.yaml" % salt))
+    out = open(".config.%s.yaml" % salt,"w")
     #NOTE: this writes the comments for the metasheet as well, but ignore it
     ruamel.yaml.round_trip_dump(wes_config, out)
     out.close()
 
     # METASHEET.csv
     # write the metasheet to .metasheet.csv
-    out = open(".metasheet.csv","w")
+    print("writing %s" % (".metasheet.%s.csv" % salt))
+    out = open(".metasheet.%s.csv" % salt,"w")
     out.write("RunName,Normal,Tumor\n")
     for run in config['metasheet']:
         normal = config['metasheet'][run]['normal']
@@ -355,8 +360,10 @@ def main():
     #UPLOAD .config.yaml and .metasheet.csv
     #NOTE: we are skip checking .ssh/known_hosts
     #really should make this a fn
-    for f in ['config.yaml', 'metasheet.csv']:
-        cmd = ['scp', "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", '-i', options.key_file, ".%s" % f, "%s@%s:%s%s" % (options.user, ip_addr, "/mnt/ssd/wes/", f)]
+    for f in [('config.yaml', ".config.%s.yaml" % salt),
+              ('metasheet.csv', ".metasheet.%s.csv" % salt)]:
+        (basename, fname) = f
+        cmd = ['scp', "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", '-i', options.key_file, "%s" % fname, "%s@%s:%s%s" % (options.user, ip_addr, "/mnt/ssd/wes/", basename)]
         print(" ".join(cmd))
         proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         (out, error) = proc.communicate()
