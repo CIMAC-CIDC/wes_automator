@@ -30,6 +30,11 @@ assembly: hg38
 
 vcf2maf_bufferSize: 50000 #for standard8 #50000 for highmem-64
 
+# neoantigen module - Define whether to run class II results
+# This will trigger an additional HLA caller, xHLA to generate class II
+# HLA alleles.  Uncomment the following line to enable it-
+# neoantigen_run_classII: True
+
 # neoantigen module - Define which callers to use in a space-separated list
 # Callers avaliable:
 # 'MHCflurry', 'MHCnuggetsI', 'MHCnuggetsII', 'NNalign', 'NetMHC',
