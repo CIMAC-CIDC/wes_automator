@@ -65,14 +65,25 @@ def wait_for_operation(compute, project, zone, operation):
 
         time.sleep(1)
 
-def create(compute, instance_name, image, machine_type, project, serviceAcct, zone):
+def create(compute, instance_name, image_name, image_family, machine_type, project, serviceAcct, zone):
     """Given a XX, YYY...
     Tries to create an instance according to the given params using 
-    googeapi methods"""
-
-    #get latest image from image family
-    image_response = compute.images().getFromFamily(project=project, 
-                                                    family=image).execute()
+    googeapi methods
+    NOTE: Either image_name or image_family is filled (i.e. both being
+    empty strings are not allowed!)
+    If both are specified, the image_name is used where this fn
+    tries to retrieve that image, otherwise tries to use the
+    latest image from the image_family, e.g. 'wes' or 'cidc_chips'
+    """
+    #KEY: WE need to check if image_name is non-empty--if so, we try to
+    #retrieve the image ELSE (we assume image_family is non-empty) and
+    #get the latest image from the family name
+    if image_name:
+        image_response = compute.images().get(project=project,
+                                              image=image_name).execute()
+    else:
+        image_response = compute.images().getFromFamily(project=project,
+                                                        family=image_family).execute()
     source_disk_image = image_response['selfLink']
 
     #set the machine type

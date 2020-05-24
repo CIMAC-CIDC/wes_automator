@@ -100,8 +100,9 @@ def checkConfig(wes_auto_config):
 def createInstanceDisk(compute, instance_config, disk_config, ssh_config, project, zone, disk_auto_del=True):
     #create a new instance
     print("Creating instance...")
-    response = instance.create(compute, instance_config['name'], 
-                               instance_config['image'], 
+    response = instance.create(compute, instance_config['name'],
+                               instance_config['image_name'],
+                               instance_config['image_family'],
                                instance_config['machine_type'],
                                project,
                                instance_config['serviceAcct'], 
@@ -245,7 +246,10 @@ def main():
     #SET DEFAULTS
     _commit_str = "" if not "wes_commit" in config else config['wes_commit']
     _somatic_caller = "tnscope" if not "somatic_caller" in config else config['somatic_caller']
-    _image = "wes" if not "image" in config else config['image']
+    #NOTE: IF a specific GCP image is not set via config['image'], then
+    #the default behavior is to get the latest wes image
+    _image_name = config.get('image', '')
+    _image_family = config.get('image_family', 'wes')
     _project = "cidc-biofx" if not "project" in config else config['project']
     _service_account = "biofxvm@cidc-biofx.iam.gserviceaccount.com"
     _zone = "us-east1-b" if not "zone" in config else config['zone']
@@ -276,7 +280,8 @@ def main():
     normal_bucket_path = google_bucket_path.replace("gs://","") #remove gsL//
 
     instance_config= {'name': instance_name, 
-                      'image': _image, 
+                      'image_name': _image_name,
+                      'image_family': _image_family,
                       'machine_type': machine_type, 
                       'serviceAcct': _service_account}
 
