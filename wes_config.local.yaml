@@ -15,7 +15,7 @@ ref: "cidc_wes/ref.yaml"
 transfer_path: "gs://some/bucket/path/wes_project/"
 
 # CIMAC center: choices are {'mocha', 'mda', 'broad' (default)}
-#cimac_center: 'broad'
+cimac_center: 'broad'
 
 # SOMATIC CALLER to use, options are {tnsnv, tnhaplotyper2, tnscope}
 # tnhaplotyper2 is the default EVEN if the somatic_caller param is NOT defined

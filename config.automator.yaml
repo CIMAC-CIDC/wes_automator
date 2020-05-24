@@ -30,6 +30,9 @@ google_bucket_path: gs://mybucket/
 # tnscope is the default EVEN if the somatic_caller param is NOT defined
 somatic_caller: tnscope
 
+# CIMAC center: choices are {'mocha', 'mda', 'broad' (default)}
+cimac_center: 'broad'
+
 # DEFINE the samples- each sample should have a name, e.g. SAMPLE1
 # and a Google bucket path to the input file, 
 # e.g. gs://mybucket/data/sample1.fastq.gz
