@@ -97,7 +97,7 @@ def checkConfig(wes_auto_config):
     else:
         return True
 
-def createInstanceDisk(compute, instance_config, disk_config, ssh_config, project, zone, disk_auto_del=True):
+def createInstanceDisk(compute, instance_config, disk_config, wes_ref_snapshot, ssh_config, project, zone, disk_auto_del=True):
     #create a new instance
     print("Creating instance...")
     response = instance.create(compute, instance_config['name'],
@@ -125,6 +125,17 @@ def createInstanceDisk(compute, instance_config, disk_config, ssh_config, projec
                                 disk_config['name'], project, zone)
     #print(response)
 
+    #CREATE REF DISK from snapshot given
+    print("Creating reference disk...")
+    ref_disk_name = "-".join([instance_config['name'], 'ref-disk'])
+    response = disk.createFromSnapshot(compute, ref_disk_name, 
+                                       wes_ref_snapshot, project, zone)
+    #print(response)
+
+    #attach disk to instance
+    print("Attaching reference disk...")
+    response = disk.attach_disk(compute, instance_config['name'], 
+                                ref_disk_name, project, zone)
 
     #try to establish ssh connection:
     # wait 30 secs
@@ -134,12 +145,22 @@ def createInstanceDisk(compute, instance_config, disk_config, ssh_config, projec
     #TEST connection
     #(status, stdin, stderr) = connection.sendCommand("ls /mnt")
 
-    #SET the auto-delete flag for the newly created disk
+    #SET the auto-delete flag for the newly created disks
     print("Setting disk auto-delete flag for disk %s" % disk_config['name'])
     #NOTE: using the instance.set_disk_auto_delete fn doesn't work
     #TRY manual call
     #NOTE: the attached disk is always going to be persistent-disk-1
     cmd = [ "gcloud", "compute", "instances", "set-disk-auto-delete", instance_config['name'], "--device-name", "persistent-disk-1", "--zone", zone]
+    print(" ".join(cmd))
+    proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    (out, error) = proc.communicate()
+    if proc.returncode != 0:
+        print("Error %s:" % proc.returncode)
+        #print(out)
+        print(error)
+
+    #NOTE: ref disk is sdc which is peristent-disk-2
+    cmd = [ "gcloud", "compute", "instances", "set-disk-auto-delete", instance_config['name'], "--device-name", "persistent-disk-2", "--zone", zone]
     print(" ".join(cmd))
     proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     (out, error) = proc.communicate()
@@ -289,6 +310,7 @@ def main():
     disk_config= {'name': disk_name, 
                   'size': disk_size}
 
+    wes_ref_snapshot = config.get('wes_ref_snapshot', 'wes-ref-ver1-0')
     ssh_config= {'user': options.user, 
                  'key': options.key_file}
 
@@ -299,6 +321,7 @@ def main():
     (instanceId, ip_addr, ssh_conn) = createInstanceDisk(compute, 
                                                          instance_config, 
                                                          disk_config, 
+                                                         wes_ref_snapshot,
                                                          ssh_config, 
                                                          _project, 
                                                          _zone)
@@ -388,5 +411,6 @@ def main():
 
     print("The instance is running at the following IP: %s" % ip_addr)
     print("please log into this instance and to check-in on the run")
+
 if __name__=='__main__':
     main()

@@ -29,6 +29,29 @@ def create(compute, disk_name, size, project="cidc-biofx", zone="us-east1-b"):
     #print(operation)
     return operation
 
+def createFromSnapshot(compute, disk_name, snapshotName, project="cidc-biofx", zone="us-east1-b"):
+    """Given a disk_name and a name of a valid snapshot
+    Tries to create an disk according to the given params using 
+    googeapi methods"""
+    #First look up snapshot to get snapshotId
+    operation = compute.snapshots().get(
+        project=project,
+        snapshot=snapshotName).execute()
+    #print(operation)
+    snapshotId = operation['selfLink']
+
+    #Then create disk based on snapshotId
+    disk_config = {'name': disk_name, 'sourceSnapshot': snapshotId, 
+                   "zone": zone}
+    #create disk
+    operation = compute.disks().insert(
+        project=project,
+        zone=zone,
+        body=disk_config).execute()
+    wait_for_operation(compute, project, zone, operation['name'])
+    #print(operation)
+    return operation
+
 def delete(compute, disk_name, project="cidc-biofx", zone="us-east1-b"):
     #based on From google tutorial!
     operation = compute.disks().delete(

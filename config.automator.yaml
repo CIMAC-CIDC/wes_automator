@@ -26,6 +26,9 @@ google_bucket_path: gs://mybucket/
 #the default behavior is to get the latest wes image
 #image: wes-ver2-0
 
+#Define the wes reference snapshot to use, default wes-ref-ver1-0
+wes_ref_snapshot: 'wes-ref-ver1-0'
+
 # SOMATIC CALLER to use, options are {tnsnv, tnhaplotyper2, tnscope}
 # tnscope is the default EVEN if the somatic_caller param is NOT defined
 somatic_caller: tnscope
