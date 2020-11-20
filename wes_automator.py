@@ -265,16 +265,17 @@ def main():
     checkConfig(config)
 
     #SET DEFAULTS
-    _commit_str = "" if not "wes_commit" in config else config['wes_commit']
-    _somatic_caller = "tnscope" if not "somatic_caller" in config else config['somatic_caller']
+    _commit_str = config.get('wes_commit', "")
+    _somatic_caller = config.get('somatic_caller', 'tnscope')
     _cimac_center = config.get("cimac_center","broad")
+    _trim_soft_clip = config.get("trim_soft_clip", False)
     #NOTE: IF a specific GCP image is not set via config['image'], then
     #the default behavior is to get the latest wes image
     _image_name = config.get('image', '')
     _image_family = config.get('image_family', 'wes')
-    _project = "cidc-biofx" if not "project" in config else config['project']
+    _project = config.get("project", "cidc-biofx")
     _service_account = "biofxvm@cidc-biofx.iam.gserviceaccount.com"
-    _zone = "us-east1-b" if not "zone" in config else config['zone']
+    _zone = config.get("zone", "us-east1-b")
     #dictionary of machine types based on cores
     _machine_types = {'2': 'n1-highmem-2',
                       '4': 'n1-highmem-4',
@@ -291,7 +292,7 @@ def main():
     disk_name = "-".join([instance_name, 'disk'])
     disk_size = config['disk_size']
 
-    #SET machine type (default to n1-standard-8 if the core count is undefined
+    #SET machine type (default to n1-standard-8 if the core count is undefined)
     machine_type = "n1-standard-8"
     if 'cores' in config and str(config['cores']) in _machine_types:
         machine_type = _machine_types[str(config['cores'])]
@@ -355,6 +356,8 @@ def main():
     wes_config['somatic_caller'] = _somatic_caller
     # ADD cimac_center
     wes_config['cimac_center'] = _cimac_center
+    # Add trim_soft_clip
+    wes_config['trim_soft_clip'] = _trim_soft_clip
     ##set transfer path
     transfer_path = normal_bucket_path
     #check if transfer_path has gs:// in front

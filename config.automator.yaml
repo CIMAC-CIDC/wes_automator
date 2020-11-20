@@ -36,6 +36,10 @@ somatic_caller: tnscope
 # CIMAC center: choices are {'mocha', 'mda', 'broad' (default)}
 cimac_center: 'broad'
 
+# Trim soft clip reads when calling somatic variants? False (default)
+# NOT available for tnsnv
+trim_soft_clip: False
+
 # DEFINE the samples- each sample should have a name, e.g. SAMPLE1
 # and a Google bucket path to the input file, 
 # e.g. gs://mybucket/data/sample1.fastq.gz

@@ -63,6 +63,16 @@ effective_size: 30000000
 #NOTE: please list them as a space separated string, e.g. "LUAD LUSC"
 #tcga_panel: "LUAD LUSC"
 
+# trim_soft_clip - When performing somatic variant calling, ignore soft clipped
+# reads
+# ref: https://support.sentieon.com/manual/usages/general/#tnhaplotyper2-algorithm
+# NOTE: only supported in TNscope and TNhaplotyper2; NOT in TNsnv
+# IF TNsnv is selected as somatic_caller, then this param will be ignored
+# Default: soft clipped reads are NOT ignored
+# to turn on this feature uncomment the following line
+#
+trim_soft_clip: False
+
 # DEFINE the samples- each sample should have a name, e.g. SAMPLE1
 # and a path to the input file, e.g. data/sample1.fastq.gz
 # VALID INPUTS: fastq, fastq.gz, bam
