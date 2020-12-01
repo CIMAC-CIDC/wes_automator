@@ -90,3 +90,13 @@ samples:
     - data/sample1.input.fastq.gz
   SAMPLE2:
     - data/sample2.fastq.gz
+
+# (Optional) Define any RNA-seq expression data associated with the TUMOR
+# samples only.  Currently, only expression results from Salmon are supported.
+# The sample names in this section must match the same names used in the
+# previous section.
+#expression_files:
+#  SAMPLE1:
+#    - rna_data/sample1.quant.sf
+#  SAMPLE2:
+#    - rna_data/sample2.quant.sf

@@ -50,27 +50,14 @@ class ssh:
             t[2].close()
             return (status, std_out, std_err)
 
-def checkConfig(wes_auto_config):
-    """Does some basic checks on the config file
-    INPUT config file parsed as a dictionary
-    returns True if everything is ok
-    otherwise exits!
-    """
-    required_fields = ["instance_name", "cores", "disk_size",
-                       "google_bucket_path", "samples", "metasheet"]
-    optional_fields = ['wes_commit']
+def checkConfig_bucketPath(a_dict, invalid_bucket_paths):
+    """Given a dictionary of {key: [list of google bucket paths], ...}
+    Will check each of the bucket paths associated with the key and 
+    if any are invalid, will add them to the invalid_bucket_path list
+    NOTE: this was an inner loop in checkConfig which we're trying to reuse"""
 
-    missing = []
-    for f in required_fields:
-        if not f in wes_auto_config or not wes_auto_config[f]:
-            missing.append(f)
-
-    #check if the sample fastq/bam files are valid
-    invalid_bucket_paths = []
-    print("Checking the sample file paths...")
-    samples = wes_auto_config['samples']
-    for sample in samples:
-        for f in samples[sample]:
+    for sample in a_dict:
+        for f in a_dict[sample]:
             cmd = [ "gsutil", "ls", f]
             print(" ".join(cmd))
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
@@ -81,6 +68,31 @@ def checkConfig(wes_auto_config):
                 #print(out)
                 print(error)
                 invalid_bucket_paths.append(f)
+
+def checkConfig(wes_auto_config):
+    """Does some basic checks on the config file
+    INPUT config file parsed as a dictionary
+    returns True if everything is ok
+    otherwise exits!
+    """
+    required_fields = ["instance_name", "cores", "disk_size",
+                       "google_bucket_path", "samples", "metasheet"]
+    #optional_fields = ['wes_commit'] #not used below!!
+
+    missing = []
+    for f in required_fields:
+        if not f in wes_auto_config or not wes_auto_config[f]:
+            missing.append(f)
+
+    #check if the sample fastq/bam files are valid
+    invalid_bucket_paths = []
+    print("Checking the sample file paths...")
+    checkConfig_bucketPath(wes_auto_config['samples'], invalid_bucket_paths)
+
+    expression_files = wes_auto_config.get('expression_files', None)
+    if expression_files:
+        print("Checking the expression file paths...")
+        checkConfig_bucketPath(expression_files, invalid_bucket_paths)
 
     if invalid_bucket_paths:
         print("Some sample file bucket files are invalid or do not exist, please correct this.")
@@ -207,11 +219,15 @@ def transferRawFiles_remote(samples, bucket_path):
                 print(error)
     return tmp
 
-def transferRawFiles_local(samples, ssh_conn):
+def transferRawFiles_local(samples, ssh_conn, sub_dir, wes_dir='/mnt/ssd/wes'):
     """Goes through each FILE associated with each sample and issues
     a cmd from the instance to download the file to /mnt/ssd/wes/data
 
-    RETIRNS: a dictionary of samples with their new data paths
+    RETURNS: a dictionary of samples with their new data paths
+
+    NOTE: updating this to take in any general upload--e.g. rna-seq expression
+    so the name 'samples' is a legacy, but the data structure of a 
+    dictionary of {key: [google bucket file paths, ...], ...} is the same
     """
 
     tmp = {}
@@ -222,14 +238,16 @@ def transferRawFiles_local(samples, ssh_conn):
                 tmp[sample] = []
             # get the filename, e.g. XXX.fq.gz or XXX.bsm
             filename = fq.split("/")[-1]
-            tmp[sample].append("data/%s" % filename)
+            #tmp[sample].append("data/%s" % filename)
+            tmp[sample].append(os.path.join(sub_dir, filename))
 
             #HARDCODED location of where the data files are expected--
             #no trailing /
-            dst = "/mnt/ssd/wes/data"
+            #dst = "/mnt/ssd/wes/data"
+            dst = os.path.join(wes_dir, sub_dir)
 
             #MAKE the data directory
-            (status, stdin, stderr) = ssh_conn.sendCommand("mkdir -p /mnt/ssd/wes/data")
+            (status, stdin, stderr) = ssh_conn.sendCommand("mkdir -p %s" % dst)
             cmd = " ".join([ "gsutil", "-m", "cp", fq, dst])
             print(cmd)
             (status, stdin, stderr) = ssh_conn.sendCommand(cmd)
@@ -338,7 +356,13 @@ def main():
 #------------------------------------------------------------------------------
     # transfer the data to the bucket directory
     print("Transferring raw files to the bucket...")
-    tmp = transferRawFiles_local(config['samples'], ssh_conn)
+    samples = transferRawFiles_local(config['samples'], ssh_conn, 'data')
+
+    expression_files = config.get('expression_files', None)
+    if expression_files:
+        print("Transferring expression files to the bucket...")
+        expression = transferRawFiles_local(expression_files, ssh_conn, 'rna_data')
+
 #------------------------------------------------------------------------------
     # Write a config (.config.yaml) and a meta (.metasheet.csv) locally
     # then upload it to the instance
@@ -351,7 +375,9 @@ def main():
     wes_config_f.close()
     
     # SET the config to the samples dictionary we built up
-    wes_config['samples'] = tmp
+    wes_config['samples'] = samples
+    if expression_files:
+        wes_config['expression_files'] = expression
     # ADD somatic caller
     wes_config['somatic_caller'] = _somatic_caller
     # ADD cimac_center
