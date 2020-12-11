@@ -52,13 +52,19 @@ class ssh:
 
 def checkConfig_bucketPath(a_dict, invalid_bucket_paths):
     """Given a dictionary of {key: [list of google bucket paths], ...}
+    OR a dictionary of dictionaries (of google paths {key: {foo: path, ..}..}
     Will check each of the bucket paths associated with the key and 
     if any are invalid, will add them to the invalid_bucket_path list
     NOTE: this was an inner loop in checkConfig which we're trying to reuse"""
 
     for sample in a_dict:
         for f in a_dict[sample]:
-            cmd = [ "gsutil", "ls", f]
+            if isinstance(a_dict[sample], list):
+                ffile = f
+            else: #dictionary
+                ffile = a_dict[sample][f]
+
+            cmd = [ "gsutil", "ls", ffile]
             print(" ".join(cmd))
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
                                     stderr=subprocess.PIPE)
@@ -89,10 +95,10 @@ def checkConfig(wes_auto_config):
     print("Checking the sample file paths...")
     checkConfig_bucketPath(wes_auto_config['samples'], invalid_bucket_paths)
 
-    expression_files = wes_auto_config.get('expression_files', None)
-    if expression_files:
-        print("Checking the expression file paths...")
-        checkConfig_bucketPath(expression_files, invalid_bucket_paths)
+    rna = wes_auto_config.get('rna', None)
+    if rna:
+        print("Checking the RNA-seq file paths...")
+        checkConfig_bucketPath(rna, invalid_bucket_paths)
 
     if invalid_bucket_paths:
         print("Some sample file bucket files are invalid or do not exist, please correct this.")
@@ -225,21 +231,36 @@ def transferRawFiles_local(samples, ssh_conn, sub_dir, wes_dir='/mnt/ssd/wes'):
 
     RETURNS: a dictionary of samples with their new data paths
 
-    NOTE: updating this to take in any general upload--e.g. rna-seq expression
-    so the name 'samples' is a legacy, but the data structure of a 
-    dictionary of {key: [google bucket file paths, ...], ...} is the same
+    NOTE: This function handles two types of data structures
+    1. dictionary of lists: e.g. 'samples'-
+       {sample: [google bucket file paths, ...], ...}
+    2. dictionary of dictionaries which define google bucket paths, eg. 'rna'-
+       {sample: {bam_file: <google bucket path>, expression_file: <path>}...}
     """
 
     tmp = {}
     for sample in samples:
         for fq in samples[sample]:
-            #add this to the samples dictionary
-            if sample not in tmp:
-                tmp[sample] = []
-            # get the filename, e.g. XXX.fq.gz or XXX.bsm
-            filename = fq.split("/")[-1]
-            #tmp[sample].append("data/%s" % filename)
-            tmp[sample].append(os.path.join(sub_dir, filename))
+            #Check if this is dictionary of lists or dict of dicts
+            if isinstance(samples[sample], list): #is a list
+                #add this to the samples dictionary
+                if sample not in tmp:
+                    tmp[sample] = []
+
+                # get the filename, e.g. XXX.fq.gz or XXX.bsm
+                ffile = fq
+                filename = ffile.split("/")[-1]
+                tmp[sample].append(os.path.join(sub_dir, filename))
+            else: #dictionary
+                #add this to the samples dictionary
+                if sample not in tmp:
+                    tmp[sample] = {}
+
+                ffile = samples[sample][fq] #de-reference once more
+                filename = ffile.split("/")[-1]
+                #MAKE sure that the data structure remains a dictionary
+                tmp[sample][fq] = os.path.join(sub_dir, filename)
+
 
             #HARDCODED location of where the data files are expected--
             #no trailing /
@@ -248,7 +269,7 @@ def transferRawFiles_local(samples, ssh_conn, sub_dir, wes_dir='/mnt/ssd/wes'):
 
             #MAKE the data directory
             (status, stdin, stderr) = ssh_conn.sendCommand("mkdir -p %s" % dst)
-            cmd = " ".join([ "gsutil", "-m", "cp", fq, dst])
+            cmd = " ".join([ "gsutil", "-m", "cp", ffile, dst])
             print(cmd)
             (status, stdin, stderr) = ssh_conn.sendCommand(cmd)
             if stderr:
@@ -355,13 +376,13 @@ def main():
         print(stderr)
 #------------------------------------------------------------------------------
     # transfer the data to the bucket directory
-    print("Transferring raw files to the bucket...")
+    print("Transferring raw files from the bucket...")
     samples = transferRawFiles_local(config['samples'], ssh_conn, 'data')
 
-    expression_files = config.get('expression_files', None)
-    if expression_files:
-        print("Transferring expression files to the bucket...")
-        expression = transferRawFiles_local(expression_files, ssh_conn, 'rna_data')
+    rna = config.get('rna', None)
+    if rna:
+        print("Transferring RNA-seq files from the bucket...")
+        rna = transferRawFiles_local(rna, ssh_conn, 'rna_data')
 
 #------------------------------------------------------------------------------
     # Write a config (.config.yaml) and a meta (.metasheet.csv) locally
@@ -376,8 +397,8 @@ def main():
     
     # SET the config to the samples dictionary we built up
     wes_config['samples'] = samples
-    if expression_files:
-        wes_config['expression_files'] = expression
+    if rna:
+        wes_config['rna'] = rna
     # ADD somatic caller
     wes_config['somatic_caller'] = _somatic_caller
     # ADD cimac_center
