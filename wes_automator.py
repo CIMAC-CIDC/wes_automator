@@ -371,7 +371,9 @@ def main():
 #------------------------------------------------------------------------------
     #SETUP the instance, disk, and wes directory
     print("Setting up the attached disk...")
-    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator.sh %s %s" % (options.user, _commit_str))
+    cmd= "/home/taing/utils/wes_automator.sh %s %s" % (options.user, _commit_str)
+    #print(cmd)
+    (status, stdin, stderr) = ssh_conn.sendCommand(cmd)
     if stderr:
         print(stderr)
 #------------------------------------------------------------------------------

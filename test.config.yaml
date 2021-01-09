@@ -1,10 +1,6 @@
-###############################################################################
-# Automator configuration file
-###############################################################################
-
 # Give the new instance a unique name, e.g. the wes run name
 # NOTE: "wes-auto" will automatically be prepended to this string
-instance_name: "test1"
+instance_name: "fast-test"
 
 # Define the number of cores for the wes instance
 # Options- 32 (default), 64, 96 
@@ -12,19 +8,20 @@ cores: 32
 
 # Define the disk size to use in GB, default 500
 # the name of the persistent disk will be: "wes_auto_{instance_name}_disk"
-disk_size: 500
+disk_size: 250
 
 #DEFINE the path to the google bucket path for the run
-google_bucket_path: gs://mybucket/
+google_bucket_path: gs://lens_bucket2/wes_automator/test4/
 
 # Uncomment the following and define the specific wes commit string to use
-# wes_commit: "44b17ff"
-# wes_commit: "develop"
+#wes_commit: c29b189
+#wes_commit: develop
+wes_commit: addf309
 
 #Uncomment the following and define the specific wes GCP image to use
 #NOTE: IF a specific GCP image is not set via config['image'], then
 #the default behavior is to get the latest wes image
-image: wes-ver2-16
+image: wes-ver2-20
 
 #Define the wes reference snapshot to use, default wes-ref-ver1-0
 wes_ref_snapshot: 'wes-human-ref-ver1-3'
@@ -34,7 +31,7 @@ wes_ref_snapshot: 'wes-human-ref-ver1-3'
 somatic_caller: tnscope
 
 # CIMAC center: choices are {'mocha', 'mda', 'broad' (default)}
-cimac_center: 'broad'
+cimac_center: 'mocha'
 
 # Trim soft clip reads when calling somatic variants? False (default)
 # NOT available for tnsnv
@@ -49,15 +46,12 @@ trim_soft_clip: False
 #   - gs://mybucket/data/sample1_pair1.fastq
 #   - gs://mybucket/data/sample1_pair2.fastq
 samples:
-  mocha2-Run1-pt1-Normal:
-    - gs://mybucket/data/R1-1-N_HHTFLDSXX_R1.fastq.gz
-    - gs://mybucket/data/R1-1-N_HHTFLDSXX_R2.fastq.gz
-  mocha2-Run1-pt1-FF-Tumor:
-    - gs://mybucket/data/R1-1-F_HHTFLDSXX_R1.fastq.gz
-    - gs://mybucket/data/R1-1-F_HHTFLDSXX_R2.fastq.gz
-  mocha2-Run1-pt1-FFPE-Tumor:
-    - gs://mybucket/data/R1-1-FP_HHTFLDSXX_R1.fastq.gz
-    - gs://mybucket/data/R1-1-FP_HHTFLDSXX_R2.fastq.gz
+  CA209009-Normal:
+    - gs://lens_bucket2/wes_remotes/len/data/CA209009.N.1.fq.gz
+    - gs://lens_bucket2/wes_remotes/len/data/CA209009.N.2.fq.gz
+  CA209009-Tumor:
+    - gs://lens_bucket2/wes_remotes/len/data/CA209009.T.1.fq.gz
+    - gs://lens_bucket2/wes_remotes/len/data/CA209009.T.2.fq.gz
 
 # metahseet- Group the samples into Tumor/Normal "runs"
 # each run should have a name, e.g. run_1:
@@ -68,22 +62,16 @@ samples:
 #    tumor: SAMPLE_Tumor
 #    normal: SAMPLE_normal
 metasheet:
-  mocha2-Run1-pt1-FF_run:
-    normal: mocha2-Run1-pt1-Normal
-    tumor: mocha2-Run1-pt1-FF-Tumor
-  mocha2-Run1-pt1-FFPE_run:
-    normal: mocha2-Run1-pt1-Normal
-    tumor: mocha2-Run1-pt1-FFPE-Tumor
+  CA209009_Run:
+    tumor: CA209009-Tumor
+    normal: CA209009-Normal
 
 # (Optional) Define any RNA-seq expression data associated with the TUMOR
 # samples only.  Currently, only expression results from Salmon are supported.
 # The sample names in this section must match the same names used in the
 # previous section.
-# BOTH bam and expression files are required
-#rna:
+#expression_files:
 #  mocha2-Run1-pt1-FF-Tumor:
-#    bam_file: gs://mybucket/data/mocha2-Run1-pt1-FF-Tumor.sorted.bam
-#    expression_file: gs://mybucket/data/mocha2-Run1-pt1-FF-Tumor.quant.sf
+#    - gs://mybucket/data/mocha2-Run1-pt1-FF-Tumor.quant.sf
 #  mocha2-Run1-pt1-FFPE-Tumor:
-#    bam_file: gs://mybucket/data/mocha2-Run1-pt1-FFPE-Tumor.sorted.bam
-#    expression_file: gs://mybucket/data/mocha2-Run1-pt1-FFPE-Tumor.quant.sf
+#    - gs://mybucket/data/mocha2-Run1-pt1-FFPE-Tumor.quant.sf
