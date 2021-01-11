@@ -16,15 +16,15 @@ google_bucket_path: gs://lens_bucket2/wes_automator/test4/
 # Uncomment the following and define the specific wes commit string to use
 #wes_commit: c29b189
 #wes_commit: develop
-wes_commit: addf309
+wes_commit: "f58dff0"
 
 #Uncomment the following and define the specific wes GCP image to use
 #NOTE: IF a specific GCP image is not set via config['image'], then
 #the default behavior is to get the latest wes image
-image: wes-ver2-20
+image: 'wes-ver2-20a'
 
 #Define the wes reference snapshot to use, default wes-ref-ver1-0
-wes_ref_snapshot: 'wes-human-ref-ver1-3'
+wes_ref_snapshot: 'wes-human-ref-ver1-3a'
 
 # SOMATIC CALLER to use, options are {tnsnv, tnhaplotyper2, tnscope}
 # tnscope is the default EVEN if the somatic_caller param is NOT defined
