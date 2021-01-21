@@ -21,7 +21,7 @@ wes_commit: "f58dff0"
 #Uncomment the following and define the specific wes GCP image to use
 #NOTE: IF a specific GCP image is not set via config['image'], then
 #the default behavior is to get the latest wes image
-image: 'wes-ver2-20a'
+#image: 'wes-ver2-20a'
 
 #Define the wes reference snapshot to use, default wes-ref-ver1-0
 wes_ref_snapshot: 'wes-human-ref-ver1-3a'
@@ -47,11 +47,11 @@ trim_soft_clip: False
 #   - gs://mybucket/data/sample1_pair2.fastq
 samples:
   CA209009-Normal:
-    - gs://lens_bucket2/wes_remotes/len/data/CA209009.N.1.fq.gz
-    - gs://lens_bucket2/wes_remotes/len/data/CA209009.N.2.fq.gz
+    - gs://lens_bucket2/wes_automator/test1/data/CA209009.N.1.fq.gz
+    - gs://lens_bucket2/wes_automator/test1/data/CA209009.N.2.fq.gz
   CA209009-Tumor:
-    - gs://lens_bucket2/wes_remotes/len/data/CA209009.T.1.fq.gz
-    - gs://lens_bucket2/wes_remotes/len/data/CA209009.T.2.fq.gz
+    - gs://lens_bucket2/wes_automator/test1/data/CA209009.T.1.fq.gz
+    - gs://lens_bucket2/wes_automator/test1/data/CA209009.T.2.fq.gz
 
 # metahseet- Group the samples into Tumor/Normal "runs"
 # each run should have a name, e.g. run_1:
