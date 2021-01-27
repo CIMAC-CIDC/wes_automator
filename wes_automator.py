@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+"""Len Taing 2019 (TGBTG)
+WES automator script to automatically run WES on GCP
+"""
+
 import os
 import sys
 import time

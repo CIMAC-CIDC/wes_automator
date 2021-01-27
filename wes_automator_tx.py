@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""Len Taing 2019 (TGBTG)
+WES automator transfer script to automatically transfer wes project to Google 
+Bucket defined in the config as 'google_bucket_path'
+"""
+
 import os
 import sys
 import time

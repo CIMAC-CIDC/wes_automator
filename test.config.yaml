@@ -1,3 +1,9 @@
+###############################################################################
+# Len Taing 2019 (TGBTG)
+###############################################################################
+# Automator test configuration file
+###############################################################################
+
 # Give the new instance a unique name, e.g. the wes run name
 # NOTE: "wes-auto" will automatically be prepended to this string
 instance_name: "fast-test"
@@ -16,7 +22,7 @@ google_bucket_path: gs://lens_bucket2/wes_automator/test4/
 # Uncomment the following and define the specific wes commit string to use
 #wes_commit: c29b189
 #wes_commit: develop
-wes_commit: "f58dff0"
+wes_commit: "234bec7"
 
 #Uncomment the following and define the specific wes GCP image to use
 #NOTE: IF a specific GCP image is not set via config['image'], then

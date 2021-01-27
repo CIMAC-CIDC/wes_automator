@@ -1,3 +1,7 @@
+"""Len Taing 2019 (TGBTG)
+WES automator - Google Cloud API wrapper for instance operations
+"""
+
 import os
 import sys
 import time

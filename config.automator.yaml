@@ -1,4 +1,6 @@
 ###############################################################################
+# Len Taing 2019 (TGBTG)
+###############################################################################
 # Automator configuration file
 ###############################################################################
 
@@ -24,7 +26,7 @@ google_bucket_path: gs://mybucket/
 #Uncomment the following and define the specific wes GCP image to use
 #NOTE: IF a specific GCP image is not set via config['image'], then
 #the default behavior is to get the latest wes image
-image: wes-ver2-16
+#image: wes-ver2-16
 
 #Define the wes reference snapshot to use, default wes-ref-ver1-0
 wes_ref_snapshot: 'wes-human-ref-ver1-3'
