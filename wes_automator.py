@@ -320,13 +320,13 @@ def main():
     _service_account = "biofxvm@cidc-biofx.iam.gserviceaccount.com"
     _zone = config.get("zone", "us-east1-b")
     #dictionary of machine types based on cores
-    _machine_types = {'2': 'n1-highmem-2',
-                      '4': 'n1-highmem-4',
-                      '8': 'n1-highmem-8',
-                      '16': 'n1-highmem-16',
-                      '32': 'n1-highmem-32',
-                      '64': 'n1-highmem-64',
-                      '96': 'n1-highmem-96'}
+    _machine_types = {'2': 'n2-standard-2',
+                      '4': 'n2-standard-4',
+                      '8': 'n2-standard-8',
+                      '16': 'n2-standard-16',
+                      '32': 'n2-standard-32',
+                      '64': 'n2-standard-64',
+                      '96': 'n2-standard-96'}
 
     #SHOULD I error check these?
     #AUTO append "wes_auto_" to instance name
@@ -335,8 +335,8 @@ def main():
     disk_name = "-".join([instance_name, 'disk'])
     disk_size = config['disk_size']
 
-    #SET machine type (default to n1-standard-8 if the core count is undefined)
-    machine_type = "n1-standard-8"
+    #SET machine type (default to n2-standard-8 if the core count is undefined)
+    machine_type = "n2-standard-8"
     if 'cores' in config and str(config['cores']) in _machine_types:
         machine_type = _machine_types[str(config['cores'])]
 

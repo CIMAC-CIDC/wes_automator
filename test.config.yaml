@@ -22,7 +22,7 @@ google_bucket_path: gs://lens_bucket2/wes_automator/test4/
 # Uncomment the following and define the specific wes commit string to use
 #wes_commit: c29b189
 #wes_commit: develop
-wes_commit: "234bec7"
+wes_commit: "c5e9670"
 
 #Uncomment the following and define the specific wes GCP image to use
 #NOTE: IF a specific GCP image is not set via config['image'], then
@@ -76,8 +76,7 @@ metasheet:
 # samples only.  Currently, only expression results from Salmon are supported.
 # The sample names in this section must match the same names used in the
 # previous section.
-#expression_files:
-#  mocha2-Run1-pt1-FF-Tumor:
-#    - gs://mybucket/data/mocha2-Run1-pt1-FF-Tumor.quant.sf
-#  mocha2-Run1-pt1-FFPE-Tumor:
-#    - gs://mybucket/data/mocha2-Run1-pt1-FFPE-Tumor.quant.sf
+#rna:
+#  CA209009-Tumor:
+#    bam_file: gs://lens_bucket2/wes_automator/test_rna/rna_data/B4.sorted.clean.bam
+#    expression_file: gs://lens_bucket2/wes_automator/test_rna/rna_data/B4.quant.sf
