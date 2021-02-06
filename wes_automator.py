@@ -308,6 +308,7 @@ def main():
     checkConfig(config)
 
     #SET DEFAULTS
+    _sentieon_path = config.get("sentieon_path", "/home/taing/sentieon/sentieon-genomics-201808.05/bin/")
     _commit_str = config.get('wes_commit', "")
     _somatic_caller = config.get('somatic_caller', 'tnscope')
     _cimac_center = config.get("cimac_center","broad")
@@ -411,6 +412,8 @@ def main():
     wes_config['cimac_center'] = _cimac_center
     # Add trim_soft_clip
     wes_config['trim_soft_clip'] = _trim_soft_clip
+    # Add sentieon path
+    wes_config['sentieon_path'] = _sentieon_path
     ##set transfer path
     transfer_path = normal_bucket_path
     #check if transfer_path has gs:// in front
