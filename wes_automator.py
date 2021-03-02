@@ -451,7 +451,8 @@ def main():
     #NOTE: we are skip checking .ssh/known_hosts
     #really should make this a fn
     for f in [('config.yaml', ".config.%s.yaml" % salt),
-              ('metasheet.csv', ".metasheet.%s.csv" % salt)]:
+              ('metasheet.csv', ".metasheet.%s.csv" % salt),
+              (options.config, options.config)]:
         (basename, fname) = f
         cmd = ['scp', "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", '-i', options.key_file, "%s" % fname, "%s@%s:%s%s" % (options.user, ip_addr, "/mnt/ssd/wes/", basename)]
         print(" ".join(cmd))
