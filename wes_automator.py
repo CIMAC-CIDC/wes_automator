@@ -254,7 +254,7 @@ def transferRawFiles_local(samples, ssh_conn, sub_dir, wes_dir='/mnt/ssd/wes'):
                 # get the filename, e.g. XXX.fq.gz or XXX.bsm
                 ffile = fq
                 filename = ffile.split("/")[-1]
-                tmp[sample].append(os.path.join(sub_dir, filename))
+                tmp[sample].append(os.path.join(sub_dir, sample, filename))
             else: #dictionary
                 #add this to the samples dictionary
                 if sample not in tmp:
@@ -263,13 +263,13 @@ def transferRawFiles_local(samples, ssh_conn, sub_dir, wes_dir='/mnt/ssd/wes'):
                 ffile = samples[sample][fq] #de-reference once more
                 filename = ffile.split("/")[-1]
                 #MAKE sure that the data structure remains a dictionary
-                tmp[sample][fq] = os.path.join(sub_dir, filename)
+                tmp[sample][fq] = os.path.join(sub_dir, sample, filename)
 
 
             #HARDCODED location of where the data files are expected--
             #no trailing /
             #dst = "/mnt/ssd/wes/data"
-            dst = os.path.join(wes_dir, sub_dir)
+            dst = os.path.join(wes_dir, sub_dir, sample)
 
             #MAKE the data directory
             (status, stdin, stderr) = ssh_conn.sendCommand("mkdir -p %s" % dst)
