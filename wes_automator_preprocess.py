@@ -43,11 +43,12 @@ def main():
     #print(files)
 
     #remove directory from the list
+    config_dir = options.directory
     del options_dict['directory']
 
     for f in files:
         # PARSE the yaml file
-        config_f = open(f)
+        config_f = open(os.path.join(config_dir, f))
         config = ruamel.yaml.round_trip_load(config_f.read())
         config_f.close()
 
@@ -73,7 +74,7 @@ def main():
         #write new config
         new_fname = "%s_processed.yaml" % iid
         #print(new_fname)
-        out = open(new_fname, "w")
+        out = open(os.path.join(config_dir, new_fname), "w")
         ruamel.yaml.round_trip_dump(config, out)
         out.close()
 
