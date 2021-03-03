@@ -450,9 +450,12 @@ def main():
     #UPLOAD .config.yaml and .metasheet.csv
     #NOTE: we are skip checking .ssh/known_hosts
     #really should make this a fn
+
+    #upload wes automator config file as well
+    wes_auto_config_f = options.config.split("/")[-1] #Take out config fname
     for f in [('config.yaml', ".config.%s.yaml" % salt),
               ('metasheet.csv', ".metasheet.%s.csv" % salt),
-              (options.config, options.config)]:
+              (wes_auto_config_f, options.config)]:
         (basename, fname) = f
         cmd = ['scp', "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", '-i', options.key_file, "%s" % fname, "%s@%s:%s%s" % (options.user, ip_addr, "/mnt/ssd/wes/", basename)]
         print(" ".join(cmd))
