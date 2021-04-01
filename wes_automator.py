@@ -313,6 +313,7 @@ def main():
     _somatic_caller = config.get('somatic_caller', 'tnscope')
     _cimac_center = config.get("cimac_center","broad")
     _trim_soft_clip = config.get("trim_soft_clip", False)
+    _tumor_only = config.get("tumor_only", False)
     #NOTE: IF a specific GCP image is not set via config['image'], then
     #the default behavior is to get the latest wes image
     _image_name = config.get('image', '')
@@ -412,6 +413,8 @@ def main():
     wes_config['cimac_center'] = _cimac_center
     # Add trim_soft_clip
     wes_config['trim_soft_clip'] = _trim_soft_clip
+    # Add tumor_only
+    wes_config['tumor_only'] = _tumor_only
     # Add sentieon path
     wes_config['sentieon_path'] = _sentieon_path
     ##set transfer path
@@ -442,7 +445,7 @@ def main():
     out = open(".metasheet.%s.csv" % salt,"w")
     out.write("RunName,Normal,Tumor\n")
     for run in config['metasheet']:
-        normal = config['metasheet'][run]['normal']
+        normal = config['metasheet'][run].get('normal', '')
         tumor = config['metasheet'][run]['tumor']
         out.write("%s\n" % ','.join([run, normal, tumor]))
     out.close()

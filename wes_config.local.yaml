@@ -73,6 +73,13 @@ effective_size: 30000000
 #
 trim_soft_clip: False
 
+# tumor_only - IF the normal sample is NOT available, then set this flag to
+# be True by uncommenting the line below.
+# Also make sure that the normal samples in the metasheet are empty.
+#
+# Default: tumor_only: False
+tumor_only: False
+
 # DEFINE the samples- each sample should have a name, e.g. SAMPLE1
 # and a path to the input file, e.g. data/sample1.fastq.gz
 # VALID INPUTS: fastq, fastq.gz, bam
