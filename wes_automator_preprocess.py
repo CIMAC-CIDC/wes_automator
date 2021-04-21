@@ -17,7 +17,7 @@ def main():
     usage = "USAGE: %prog -c [cores] -d [disk size] -l [cimac center] -s [somatic_caller] -b [google bucket path] -w [wes_commit] -i [wes_image] -r [wes_ref_snapshot] -t [trim_soft_clip]"
     optparser = OptionParser(usage=usage)
     optparser.add_option("-l", "--cimac_center", help="cimac center")
-    optparser.add_option("-b", "--google_bucket_path", help="google bucket path")
+    optparser.add_option("-b", "--google_bucket_path", help="google bucket path, can use {CIMAC_ID} wildcard")
     optparser.add_option("-w", "--wes_commit", help="wes commit string")
     optparser.add_option("-i", "--image", help="wes image")
     optparser.add_option("-r", "--wes_ref_snapshot", help="wes reference snapshot")
@@ -26,7 +26,8 @@ def main():
     optparser.add_option("-d", "--disk_size", help="disk size in GiB (default: 500)", default=500)
     optparser.add_option("-s", "--somatic_caller", help="somatic_caller (default: tnscope)", default="tnscope")
 
-    optparser.add_option("-t", "--trim_soft_clip", help="trim soft clip (default: false", action="store_true", default=False)
+    optparser.add_option("-t", "--trim_soft_clip", help="trim soft clip (default: false)", action="store_true", default=False)
+    optparser.add_option("-n", "--tumor_only", help="tumor_only run (default: false)", action="store_true", default=False)
     optparser.add_option("-f", "--directory", help="directory (default: '.')", default=".")
     (options, args) = optparser.parse_args(sys.argv)
     #Convert options to a dictionary
@@ -55,7 +56,9 @@ def main():
         #override the params
         for (k,v) in options_dict.items():
             #direct values, e.g. ints, bools
-            if k == 'cores' or k == 'disk_size' or k == 'trim_soft_clip':
+            if k == 'cores' or k == 'disk_size':
+                config[k] = int(v)
+            elif k == 'trim_soft_clip' or k == "tumor_only":
                 config[k] = v
             else: #put it string in quotes
                 #ref: https://stackoverflow.com/questions/39262556/preserve-quotes-and-also-add-data-with-quotes-in-ruamel

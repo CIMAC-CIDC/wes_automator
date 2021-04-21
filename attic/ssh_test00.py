@@ -92,11 +92,13 @@ def main():
 
     #try to establish a connection
     connection = ssh(options.ip, options.user, options.key_file)
-    (status, stdin, stderr) = connection.sendCommand("/mnt")
+    (status, stdin, stderr) = connection.sendCommand("ls /mnt")
     if stderr:
-        print("ERROR: %s " % str(stderr,"utf-8"))
+        #print("ERROR: %s " % str(stderr,"utf-8"))
+        print("ERROR: %s " % str(stderr))
     else:
-        print(str(stdin, 'utf-8'))
+        #print(str(stdin, 'utf-8'))
+        print(str(stdin))
 
 if __name__=='__main__':
     main()
