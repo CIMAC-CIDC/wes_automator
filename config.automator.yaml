@@ -18,8 +18,8 @@ disk_size: 500
 
 # Path to sentieon binary
 # Uncomment and define the sentieon path to use--otherwise 
-# sentieon-genomics-201808.05 is used by default
-#sentieon_path: "/home/taing/sentieon/sentieon-genomics-201808.05/bin/"
+# sentieon-genomics-202010.01 is used by default
+#sentieon_path: "/home/taing/sentieon/sentieon-genomics-202010.01/bin/"
 
 #DEFINE the path to the google bucket path for the run
 google_bucket_path: gs://mybucket/

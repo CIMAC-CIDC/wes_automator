@@ -22,8 +22,7 @@ cimac_center: 'broad'
 somatic_caller: tnscope
 
 #Path to sentieon binary
-#NOTE: sentieon version 201808.07 has errors, so reverting to 201808.05
-sentieon_path: "/home/taing/sentieon/sentieon-genomics-201808.05/bin/"
+sentieon_path: "/home/taing/sentieon/sentieon-genomics-202010.01/bin/"
 
 #Tell us what assembly to use (!! MUST be defined in chips/ref.yaml !!)
 assembly: hg38
