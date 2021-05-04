@@ -3,15 +3,24 @@
 WES automator config file processor
 Problem: we're manually tailoring wes automator config files that come from 
 the software team to add things like commit string, wes image, etc.
+
+NOTE: WILL Happily CLOBBER values so be careful!
 """
 
 import os
 import sys
 import time
+import re
 from optparse import OptionParser
 
 import ruamel.yaml
 from ruamel.yaml.scalarstring import SingleQuotedScalarString
+
+def checkInstanceName(instance_name):
+    """Checks to make sure that instance_name is a string that conforms to
+    this regex: '(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)'"""
+    prog = re.compile(r'(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)')
+    return prog.match(instance_name)
 
 def main():
     usage = "USAGE: %prog -c [cores] -d [disk size] -l [cimac center] -s [somatic_caller] -b [google bucket path] -w [wes_commit] -i [wes_image] -r [wes_ref_snapshot] -t [trim_soft_clip]"
@@ -25,6 +34,7 @@ def main():
     optparser.add_option("-c", "--cores", help="num. cores (default: 64)", default=64)
     optparser.add_option("-d", "--disk_size", help="disk size in GiB (default: 500)", default=500)
     optparser.add_option("-s", "--somatic_caller", help="somatic_caller (default: tnscope)", default="tnscope")
+    optparser.add_option("-p", "--sentieon_path", help="sentieon_path (default: /home/taing/sentieon/sentieon-genomics-201808.05/bin/)", default="/home/taing/sentieon/sentieon-genomics-201808.05/bin/")
 
     optparser.add_option("-t", "--trim_soft_clip", help="trim soft clip (default: false)", action="store_true", default=False)
     optparser.add_option("-n", "--tumor_only", help="tumor_only run (default: false)", action="store_true", default=False)
@@ -63,6 +73,11 @@ def main():
             else: #put it string in quotes
                 #ref: https://stackoverflow.com/questions/39262556/preserve-quotes-and-also-add-data-with-quotes-in-ruamel
                 config[k] = SingleQuotedScalarString(v)
+
+        #CHECK that instance_name matches this
+        #regex '(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)'
+        if not checkInstanceName(config['instance_name']):
+            print("Warning: instance_name in %s is invalid." % f)
 
         #special case for google_bucket, which is in the form of
         #assume that the name of the file is the CIMAC ID
