@@ -6,7 +6,7 @@
 
 # Give the new instance a unique name, e.g. the wes run name
 # NOTE: "wes-auto" will automatically be prepended to this string
-instance_name: "fast-test"
+instance_name: "wes-08-1-final-test"
 
 # Define the number of cores for the wes instance
 # Options- 32 (default), 64, 96 
@@ -14,20 +14,18 @@ cores: 32
 
 # Define the disk size to use in GB, default 500
 # the name of the persistent disk will be: "wes_auto_{instance_name}_disk"
-disk_size: 250
+disk_size: 200
 
 #DEFINE the path to the google bucket path for the run
 google_bucket_path: gs://lens_bucket2/wes_automator/test4/
 
 # Uncomment the following and define the specific wes commit string to use
-#wes_commit: c29b189
-#wes_commit: develop
-wes_commit: "c5e9670"
+wes_commit: "5ed35f0"
 
 #Uncomment the following and define the specific wes GCP image to use
 #NOTE: IF a specific GCP image is not set via config['image'], then
 #the default behavior is to get the latest wes image
-#image: 'wes-ver2-20a'
+image: 'wes-aashna-version'
 
 #Define the wes reference snapshot to use, default wes-ref-ver1-0
 wes_ref_snapshot: 'wes-human-ref-ver1-3a'
