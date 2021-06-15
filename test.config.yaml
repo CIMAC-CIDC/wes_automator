@@ -6,7 +6,7 @@
 
 # Give the new instance a unique name, e.g. the wes run name
 # NOTE: "wes-auto" will automatically be prepended to this string
-instance_name: "wes-08-1-final-test"
+instance_name: "fast-test"
 
 # Define the number of cores for the wes instance
 # Options- 32 (default), 64, 96 
@@ -25,10 +25,10 @@ wes_commit: "5ed35f0"
 #Uncomment the following and define the specific wes GCP image to use
 #NOTE: IF a specific GCP image is not set via config['image'], then
 #the default behavior is to get the latest wes image
-image: 'wes-aashna-version'
+image: 'wes-ver2-23'
 
 #Define the wes reference snapshot to use, default wes-ref-ver1-0
-wes_ref_snapshot: 'wes-human-ref-ver1-3a'
+wes_ref_snapshot: 'wes-human-ref-ver-1-5'
 
 # SOMATIC CALLER to use, options are {tnsnv, tnhaplotyper2, tnscope}
 # tnscope is the default EVEN if the somatic_caller param is NOT defined
