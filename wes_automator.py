@@ -287,6 +287,7 @@ def main():
     optparser.add_option("-c", "--config", help="instance name")
     optparser.add_option("-u", "--user", help="username")
     optparser.add_option("-k", "--key_file", help="key file path")
+    optparser.add_option("-s", "--setup_only", help="When this param is set, then wes_automator.py does everything EXCEPT run WES; this is helpful when you want to manually run wes sub-modules and not the entire pipeline. (default: False)", default=False, action="store_true")
     (options, args) = optparser.parse_args(sys.argv)
 
     if not options.config or not os.path.exists(options.config):
@@ -469,11 +470,14 @@ def main():
             print(error)
 
     #RUN
-    print("Running...")
-    #NOTE: _project and _bucket_path are not needed for local runs
-    (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run_local.sh %s %s %s" % (_project, normal_bucket_path, str(config['cores'])))
-    if stderr:
-        print(stderr)
+    if not options.setup_only: 
+        print("Running...")
+        #NOTE: _project and _bucket_path are not needed for local runs
+        (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run_local.sh %s %s %s" % (_project, normal_bucket_path, str(config['cores'])))
+        if stderr:
+            print(stderr)
+    else:
+        print("Setup only selected, please log into the instance to run WES manually")
 
     print("The instance %s is running at the following IP: %s" % (instance_name, ip_addr))
     print("please log into this instance and to check-in on the run")
