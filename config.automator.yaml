@@ -25,16 +25,15 @@ disk_size: 500
 google_bucket_path: gs://mybucket/
 
 # Uncomment the following and define the specific wes commit string to use
-# wes_commit: "44b17ff"
 # wes_commit: "develop"
 
 #Uncomment the following and define the specific wes GCP image to use
 #NOTE: IF a specific GCP image is not set via config['image'], then
 #the default behavior is to get the latest wes image
-#image: wes-ver2-16
+image: wes-ver2-26a
 
 #Define the wes reference snapshot to use, default wes-ref-ver1-0
-wes_ref_snapshot: 'wes-human-ref-ver1-3'
+wes_ref_snapshot: 'wes-human-ref-ver1-6a'
 
 # SOMATIC CALLER to use, options are {tnsnv, tnhaplotyper2, tnscope}
 # tnscope is the default EVEN if the somatic_caller param is NOT defined

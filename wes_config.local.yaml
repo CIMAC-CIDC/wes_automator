@@ -39,13 +39,12 @@ neoantigen_run_classII: True
 # 'MHCflurry', 'MHCnuggetsI', 'MHCnuggetsII', 'NNalign', 'NetMHC',
 # 'NetMHCIIpan', 'NetMHCcons', 'NetMHCpan', 'PickPocket', 'SMM',
 # 'SMMPMBEC', 'SMMalign'
-# neoantigen_callers: "MHCflurry NetMHCcons MHCnuggetsII"
-neoantigen_callers: "NetMHCpan NetMHCcons MHCflurry NetMHCIIpan"
-
+neoantigen_callers: "NetMHCpan NetMHCIIpan"
 
 # neoantigen module - Define which epitope lengths to analyze in comma
 # 	                  separated list
-neoantigen_epitope_lengths: "8,9,10,11"
+neoantigen_epitope_lengths_cls1: "8,9,10,11"
+neoantigen_epitope_lengths_cls2: "12,13,14,15,16,17,18"
 
 #effective_size: # of base-pairs covered in target regions
 effective_size: 30000000
