@@ -3,6 +3,7 @@
 ###############################################################################
 # Automator test configuration file
 ###############################################################################
+# Updated 2022-06-22 to use s1609 fast set
 
 # Give the new instance a unique name, e.g. the wes run name
 # NOTE: "wes-auto" will automatically be prepended to this string
@@ -20,22 +21,22 @@ disk_size: 200
 google_bucket_path: gs://lens_bucket2/wes_automator/test4/
 
 # Uncomment the following and define the specific wes commit string to use
-wes_commit: "a871632"
+wes_commit: "3fc07db"
 
 #Uncomment the following and define the specific wes GCP image to use
 #NOTE: IF a specific GCP image is not set via config['image'], then
 #the default behavior is to get the latest wes image
-image: 'wes-ver2-26a'
+image: 'wes-ver3-01a'
 
 #Define the wes reference snapshot to use, default wes-ref-ver1-0
-wes_ref_snapshot: 'wes-human-ref-ver1-6a'
+wes_ref_snapshot: 'wes-human-ref-ver1-7'
 
 # SOMATIC CALLER to use, options are {tnsnv, tnhaplotyper2, tnscope}
 # tnscope is the default EVEN if the somatic_caller param is NOT defined
 somatic_caller: tnscope
 
 # CIMAC center: choices are {'mocha', 'mda', 'broad' (default)}
-cimac_center: 'mocha'
+cimac_center: 'mda'
 
 # Trim soft clip reads when calling somatic variants? False (default)
 # NOT available for tnsnv
@@ -50,12 +51,12 @@ trim_soft_clip: False
 #   - gs://mybucket/data/sample1_pair1.fastq
 #   - gs://mybucket/data/sample1_pair2.fastq
 samples:
-  CA209009-Normal:
-    - gs://lens_bucket2/wes_automator/test1/data/CA209009.N.1.fq.gz
-    - gs://lens_bucket2/wes_automator/test1/data/CA209009.N.2.fq.gz
-  CA209009-Tumor:
-    - gs://lens_bucket2/wes_automator/test1/data/CA209009.T.1.fq.gz
-    - gs://lens_bucket2/wes_automator/test1/data/CA209009.T.2.fq.gz
+  C3RXBPC7E.01:
+    - gs://lens_bucket2/wes_automator/jacob_s1609_fastset/C3RXBPC7E.01_N_10mill_R1.fastq.gz
+    - gs://lens_bucket2/wes_automator/jacob_s1609_fastset/C3RXBPC7E.01_N_10mill_R2.fastq.gz
+  C3RXBPCKM.01:
+    - gs://lens_bucket2/wes_automator/jacob_s1609_fastset/C3RXBPCKM.01_T_10mill_R1.fastq.gz
+    - gs://lens_bucket2/wes_automator/jacob_s1609_fastset/C3RXBPCKM.01_T_10mill_R2.fastq.gz
 
 # metahseet- Group the samples into Tumor/Normal "runs"
 # each run should have a name, e.g. run_1:
@@ -66,9 +67,9 @@ samples:
 #    tumor: SAMPLE_Tumor
 #    normal: SAMPLE_normal
 metasheet:
-  CA209009_Run:
-    tumor: CA209009-Tumor
-    normal: CA209009-Normal
+  C3RXBPCKM.01:
+    tumor: C3RXBPCKM.01
+    normal: C3RXBPC7E.01
 
 # (Optional) Define any RNA-seq expression data associated with the TUMOR
 # samples only.  Currently, only expression results from Salmon are supported.
@@ -78,3 +79,6 @@ metasheet:
 #  CA209009-Tumor:
 #    bam_file: gs://lens_bucket2/wes_automator/test_rna/rna_data/B4.sorted.clean.bam
 #    expression_file: gs://lens_bucket2/wes_automator/test_rna/rna_data/B4.quant.sf
+
+# specify the GCP zone
+zone: us-east1-c
