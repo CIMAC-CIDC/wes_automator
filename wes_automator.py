@@ -281,27 +281,10 @@ def transferRawFiles_local(samples, ssh_conn, sub_dir, wes_dir='/mnt/ssd/wes'):
             
     return tmp
 
-def main():
-    usage = "USAGE: %prog -c [wes_automator config yaml] -u [google account username, e.g. taing] -k [google account key path, i.e. ~/.ssh/google_cloud_enging"
-    optparser = OptionParser(usage=usage)
-    optparser.add_option("-c", "--config", help="instance name")
-    optparser.add_option("-u", "--user", help="username")
-    optparser.add_option("-k", "--key_file", help="key file path")
-    optparser.add_option("-s", "--setup_only", help="When this param is set, then wes_automator.py does everything EXCEPT run WES; this is helpful when you want to manually run wes sub-modules and not the entire pipeline. (default: False)", default=False, action="store_true")
-    (options, args) = optparser.parse_args(sys.argv)
-
-    if not options.config or not os.path.exists(options.config):
-        print("Error: missing or non-existent yaml configuration file")
-        optparser.print_help()
-        sys.exit(-1)
-
-    if (not options.user or not options.key_file):
-        print("ERROR: missing user or google key path")
-        optparser.print_help()
-        sys.exit(-1)
-
+def run(opt_config, opt_user, opt_key_file, opt_setup_only=False):
+    """WES Automator main fn"""
     # PARSE the yaml file
-    config_f = open(options.config)
+    config_f = open(opt_config)
     config = ruamel.yaml.round_trip_load(config_f.read())
     config_f.close()
 
@@ -358,8 +341,8 @@ def main():
                   'size': disk_size}
 
     wes_ref_snapshot = config.get('wes_ref_snapshot', 'wes-ref-ver1-0')
-    ssh_config= {'user': options.user, 
-                 'key': options.key_file}
+    ssh_config= {'user': opt_user, 
+                 'key': opt_key_file}
 
     #print(instance_config)
     #print(disk_config)
@@ -378,7 +361,7 @@ def main():
 #------------------------------------------------------------------------------
     #SETUP the instance, disk, and wes directory
     print("Setting up the attached disk...")
-    cmd= "/home/taing/utils/wes_automator.sh %s %s" % (options.user, _commit_str)
+    cmd= "/home/taing/utils/wes_automator.sh %s %s" % (opt_user, _commit_str)
     #print(cmd)
     (status, stdin, stderr) = ssh_conn.sendCommand(cmd)
     if stderr:
@@ -456,12 +439,12 @@ def main():
     #really should make this a fn
 
     #upload wes automator config file as well
-    wes_auto_config_f = options.config.split("/")[-1] #Take out config fname
+    wes_auto_config_f = opt_config.split("/")[-1] #Take out config fname
     for f in [('config.yaml', ".config.%s.yaml" % salt),
               ('metasheet.csv', ".metasheet.%s.csv" % salt),
-              (wes_auto_config_f, options.config)]:
+              (wes_auto_config_f, opt_config)]:
         (basename, fname) = f
-        cmd = ['scp', "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", '-i', options.key_file, "%s" % fname, "%s@%s:%s%s" % (options.user, ip_addr, "/mnt/ssd/wes/", basename)]
+        cmd = ['scp', "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", '-i', opt_key_file, "%s" % fname, "%s@%s:%s%s" % (opt_user, ip_addr, "/mnt/ssd/wes/", basename)]
         print(" ".join(cmd))
         proc = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         (out, error) = proc.communicate()
@@ -470,7 +453,7 @@ def main():
             print(error)
 
     #RUN
-    if not options.setup_only: 
+    if not opt_setup_only: 
         print("Running...")
         #NOTE: _project and _bucket_path are not needed for local runs
         (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run_local.sh %s %s %s" % (_project, normal_bucket_path, str(config['cores'])))
@@ -481,6 +464,27 @@ def main():
 
     print("The instance %s is running at the following IP: %s" % (instance_name, ip_addr))
     print("please log into this instance and to check-in on the run")
+    
+def main():
+    usage = "USAGE: %prog -c [wes_automator config yaml] -u [google account username, e.g. taing] -k [google account key path, i.e. ~/.ssh/google_cloud_enging"
+    optparser = OptionParser(usage=usage)
+    optparser.add_option("-c", "--config", help="instance name")
+    optparser.add_option("-u", "--user", help="username")
+    optparser.add_option("-k", "--key_file", help="key file path")
+    optparser.add_option("-s", "--setup_only", help="When this param is set, then wes_automator.py does everything EXCEPT run WES; this is helpful when you want to manually run wes sub-modules and not the entire pipeline. (default: False)", default=False, action="store_true")
+    (options, args) = optparser.parse_args(sys.argv)
+
+    if not options.config or not os.path.exists(options.config):
+        print("Error: missing or non-existent yaml configuration file")
+        optparser.print_help()
+        sys.exit(-1)
+
+    if (not options.user or not options.key_file):
+        print("ERROR: missing user or google key path")
+        optparser.print_help()
+        sys.exit(-1)
+
+    run(options.config, options.user, options.key_file, options.setup_only)
 
 if __name__=='__main__':
     main()
