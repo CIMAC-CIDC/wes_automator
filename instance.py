@@ -109,6 +109,17 @@ def create(compute, instance_name, image_name, image_family, machine_type, proje
     #print(operation)
     return operation
 
+def stop(compute, name, project, zone):
+    """Tries to stop the instance with the name
+    ref: https://cloud.google.com/compute/docs/instances/stop-start-instance#stop_a_vm"""
+    operation = compute.instances().stop(
+        project=project,
+        zone=zone,
+        instance=name).execute()
+    wait_for_operation(compute, project, zone, operation['name'])
+    #print(operation)
+    return operation
+
 def delete(compute, name, project, zone):
     #based on From google tutorial!
     operation = compute.instances().delete(
