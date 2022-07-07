@@ -1,0 +1,102 @@
+###############################################################################
+# Len Taing 2022 (TGBTG)
+###############################################################################
+# Automator configuration file
+###############################################################################
+
+# Give the new instance a unique name, e.g. the wes run name
+# NOTE: "wes-auto" will automatically be prepended to this string
+instance_name: "test1"
+
+# Define the number of cores for the wes instance
+# Options- 32 (default), 64, 96 
+cores: 64
+
+# Define the disk size to use in GB, default 500
+# the name of the persistent disk will be: "wes_auto_{instance_name}_disk"
+disk_size: 500
+
+# Path to sentieon binary
+# Uncomment and define the sentieon path to use--otherwise 
+# sentieon-genomics-202010.01 is used by default
+sentieon_path: "/home/taing/sentieon/sentieon-genomics-202010.01/bin/"
+
+#DEFINE the path to the google bucket path for the run
+google_bucket_path: gs://mybucket/
+
+# Uncomment the following and define the specific wes commit string to use
+wes_commit: "1ef92cd" #which is wes v3.0
+
+#Uncomment the following and define the specific wes GCP image to use
+#NOTE: IF a specific GCP image is not set via config['image'], then
+#the default behavior is to get the latest wes image
+image: wes-ver3-01a
+
+#Define the wes reference snapshot to use, default wes-ref-ver1-0
+wes_ref_snapshot: 'wes-human-ref-ver1-7'
+
+# SOMATIC CALLER to use, options are {tnsnv, tnhaplotyper2, tnscope}
+# tnscope is the default EVEN if the somatic_caller param is NOT defined
+somatic_caller: tnscope
+
+# CIMAC center: choices are {'mocha', 'mda', 'broad' (default)}
+cimac_center: 'broad'
+
+# Trim soft clip reads when calling somatic variants? False (default)
+# NOT available for tnsnv
+trim_soft_clip: False
+
+# tumor_only - IF the normal sample is NOT available, then set this flag to
+# be True by uncommenting the line below.
+# Also make sure that the normal samples in the metasheet are empty.
+#
+# Default: tumor_only: False
+tumor_only: False
+
+# DEFINE the samples- each sample should have a name, e.g. SAMPLE1
+# and a Google bucket path to the input file, 
+# e.g. gs://mybucket/data/sample1.fastq.gz
+# VALID INPUTS: fastq, fastq.gz
+# NOTE: for PAIRED-END fastq/fastq.gz, give both pairs to the sample:
+# SAMPLE_1_PE:
+#   - gs://mybucket/data/sample1_pair1.fastq
+#   - gs://mybucket/data/sample1_pair2.fastq
+samples:
+  mocha2-Run1-pt1-Normal:
+    - gs://mybucket/data/R1-1-N_HHTFLDSXX_R1.fastq.gz
+    - gs://mybucket/data/R1-1-N_HHTFLDSXX_R2.fastq.gz
+  mocha2-Run1-pt1-FF-Tumor:
+    - gs://mybucket/data/R1-1-F_HHTFLDSXX_R1.fastq.gz
+    - gs://mybucket/data/R1-1-F_HHTFLDSXX_R2.fastq.gz
+  mocha2-Run1-pt1-FFPE-Tumor:
+    - gs://mybucket/data/R1-1-FP_HHTFLDSXX_R1.fastq.gz
+    - gs://mybucket/data/R1-1-FP_HHTFLDSXX_R2.fastq.gz
+
+# metahseet- Group the samples into Tumor/Normal "runs"
+# each run should have a name, e.g. run_1:
+# then under each run, define a tumor and a normal sample
+# EXAMPLE:
+# metasheet:
+#  run_1:
+#    tumor: SAMPLE_Tumor
+#    normal: SAMPLE_normal
+metasheet:
+  mocha2-Run1-pt1-FF_run:
+    normal: mocha2-Run1-pt1-Normal
+    tumor: mocha2-Run1-pt1-FF-Tumor
+  mocha2-Run1-pt1-FFPE_run:
+    normal: mocha2-Run1-pt1-Normal
+    tumor: mocha2-Run1-pt1-FFPE-Tumor
+
+# (Optional) Define any RNA-seq expression data associated with the TUMOR
+# samples only.  Currently, only expression results from Salmon are supported.
+# The sample names in this section must match the same names used in the
+# previous section.
+# BOTH bam and expression files are required
+#rna:
+#  mocha2-Run1-pt1-FF-Tumor:
+#    bam_file: gs://mybucket/data/mocha2-Run1-pt1-FF-Tumor.sorted.bam
+#    expression_file: gs://mybucket/data/mocha2-Run1-pt1-FF-Tumor.quant.sf
+#  mocha2-Run1-pt1-FFPE-Tumor:
+#    bam_file: gs://mybucket/data/mocha2-Run1-pt1-FFPE-Tumor.sorted.bam
+#    expression_file: gs://mybucket/data/mocha2-Run1-pt1-FFPE-Tumor.quant.sf
