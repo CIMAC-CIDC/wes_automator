@@ -278,7 +278,7 @@ def transferRawFiles_local(samples, ssh_conn, sub_dir, wes_dir='/mnt/ssd/wes'):
             
     return tmp
 
-def run(opt_config, opt_user, opt_key_file, opt_setup_only=False):
+def run(opt_config, opt_user, opt_key_file, opt_setup_only=False, wes_monitor_ip_port=None):
     """WES Automator main fn"""
     # PARSE the yaml file
     config_f = open(opt_config)
@@ -453,7 +453,12 @@ def run(opt_config, opt_user, opt_key_file, opt_setup_only=False):
     if not opt_setup_only: 
         print("Running...")
         #NOTE: _project and _bucket_path are not needed for local runs
-        (status, stdout, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run_local.sh %s %s %s" % (_project, normal_bucket_path, str(config['cores'])))
+        if not wes_monitor_ip_port: #OLD LEGACY way of running automator
+            (status, stdout, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run_local.sh %s %s %s" % (_project, normal_bucket_path, str(config['cores'])))
+        else:
+            #Integrated with wes_monitor
+            print("Integrating with wes_monitor server on %s" % wes_monitor_ip_port)
+            (status, stdout, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run_monitor.sh %s %s %s" % (_project, str(config['cores']), wes_monitor_ip_port))
         if stderr:
             print(stderr)
     else:
