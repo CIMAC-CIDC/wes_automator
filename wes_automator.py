@@ -14,7 +14,7 @@ from optparse import OptionParser
 import googleapiclient.discovery
 
 import paramiko
-from paramiko import client
+#from paramiko import client
 
 import ruamel.yaml
 
@@ -29,9 +29,9 @@ class ssh:
         # Let the user know we're connecting to the server
         print("Connecting to server.")
         # Create a new SSH client
-        self.client = client.SSHClient()
+        self.client = paramiko.client.SSHClient()
         # The following line is required if you want the script to be able to access a server that's not yet in the known_hosts file
-        self.client.set_missing_host_key_policy(client.AutoAddPolicy())
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         # Make the connection
         self.client.connect(address, username=username, key_filename=key_filename, look_for_keys=False)
 
@@ -42,17 +42,14 @@ class ssh:
         if(self.client):
             status = 0
             try:
-                t = self.client.exec_command(command, timeout)
+                std_in, std_out, std_err = self.client.exec_command(command)
             except paramiko.SSHException:
-                status=1
+                status = 1
 
-            #NOTE: reverting to python2 method of utf-8 conversion
-            std_out = unicode(t[1].read(), "utf-8") #str(t[1].read(), "utf-8")
-            std_err = unicode(t[2].read(), "utf-8") #str(t[2].read(), "utf-8")
-            t[0].close()
-            t[1].close()
-            t[2].close()
-            return (status, std_out, std_err)
+            #convert them out
+            ret_out = std_out.read().decode()
+            ret_err = std_err.read().decode()
+            return (status, ret_out, ret_err)
 
 def checkConfig_bucketPath(a_dict, invalid_bucket_paths):
     """Given a dictionary of {key: [list of google bucket paths], ...}
@@ -165,7 +162,7 @@ def createInstanceDisk(compute, instance_config, disk_config, wes_ref_snapshot, 
     #time.sleep(60)
     connection = ssh(ip_addr, ssh_config['user'], ssh_config['key'])
     #TEST connection
-    #(status, stdin, stderr) = connection.sendCommand("ls /mnt")
+    #(status, stdout, stderr) = connection.sendCommand("ls /mnt")
 
     #SET the auto-delete flag for the newly created disks
     print("Setting disk auto-delete flag for disk %s" % disk_config['name'])
@@ -272,10 +269,10 @@ def transferRawFiles_local(samples, ssh_conn, sub_dir, wes_dir='/mnt/ssd/wes'):
             dst = os.path.join(wes_dir, sub_dir, sample)
 
             #MAKE the data directory
-            (status, stdin, stderr) = ssh_conn.sendCommand("mkdir -p %s" % dst)
+            (status, stdout, stderr) = ssh_conn.sendCommand("mkdir -p %s" % dst)
             cmd = " ".join([ "gsutil", "-m", "cp", ffile, dst])
             print(cmd)
-            (status, stdin, stderr) = ssh_conn.sendCommand(cmd)
+            (status, stdout, stderr) = ssh_conn.sendCommand(cmd)
             if stderr:
                 print(stderr)
             
@@ -363,7 +360,7 @@ def run(opt_config, opt_user, opt_key_file, opt_setup_only=False):
     print("Setting up the attached disk...")
     cmd= "/home/taing/utils/wes_automator.sh %s %s" % (opt_user, _commit_str)
     #print(cmd)
-    (status, stdin, stderr) = ssh_conn.sendCommand(cmd)
+    (status, stdout, stderr) = ssh_conn.sendCommand(cmd)
     if stderr:
         print(stderr)
 #------------------------------------------------------------------------------
@@ -456,7 +453,7 @@ def run(opt_config, opt_user, opt_key_file, opt_setup_only=False):
     if not opt_setup_only: 
         print("Running...")
         #NOTE: _project and _bucket_path are not needed for local runs
-        (status, stdin, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run_local.sh %s %s %s" % (_project, normal_bucket_path, str(config['cores'])))
+        (status, stdout, stderr) = ssh_conn.sendCommand("/home/taing/utils/wes_automator_run_local.sh %s %s %s" % (_project, normal_bucket_path, str(config['cores'])))
         if stderr:
             print(stderr)
     else:
@@ -468,7 +465,7 @@ def run(opt_config, opt_user, opt_key_file, opt_setup_only=False):
 def main():
     usage = "USAGE: %prog -c [wes_automator config yaml] -u [google account username, e.g. taing] -k [google account key path, i.e. ~/.ssh/google_cloud_enging"
     optparser = OptionParser(usage=usage)
-    optparser.add_option("-c", "--config", help="instance name")
+    optparser.add_option("-c", "--config", help="wes_automator config.yaml file")
     optparser.add_option("-u", "--user", help="username")
     optparser.add_option("-k", "--key_file", help="key file path")
     optparser.add_option("-s", "--setup_only", help="When this param is set, then wes_automator.py does everything EXCEPT run WES; this is helpful when you want to manually run wes sub-modules and not the entire pipeline. (default: False)", default=False, action="store_true")
