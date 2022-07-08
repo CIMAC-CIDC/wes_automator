@@ -300,7 +300,9 @@ def parseConfig_xlsx(xlsx_file):
             tmp = {}
             for (key, cell) in zip(cols, r):
                 tmp.__setitem__(key, cell.value)
-            rows.append(tmp)
+            #Check for empty rows
+            if any(tmp.values()):
+                rows.append(tmp)
     #print(rows)
     return rows
 
