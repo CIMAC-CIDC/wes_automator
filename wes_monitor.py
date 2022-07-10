@@ -79,6 +79,10 @@ _wes_automator_template = "config.automator.template.yaml"
 _compute = googleapiclient.discovery.build('compute', 'v1')
 _project = "cidc-biofx"
 
+#these should GLOBALS be set in main fn 
+_user = None
+_key_file = None
+
 #define a /register/<instance_name>/?num_steps=
 ###############################################################################
 #KEY NOTE: any writes to the db must use thread-safe sessions --
@@ -88,6 +92,41 @@ _project = "cidc-biofx"
 #    #UPDATE wes_run object
 #    session.commit()
 ###############################################################################
+
+def stopInstanceProcess(instance_name, zone):
+    """WHEN WES run_status is ERROR-
+    This fn will restore /tmp.bak to /tmp and stop the instance"""
+    #restore /tmp
+    int_ip = instance.get_instance_ip_from_name(_compute, instance_name, _project, zone)
+    connection = wes_automator.ssh(int_ip, _user, _key_file)
+    cmd= "/home/taing/utils/restoreTmp.sh"
+    (status, stdout, stderr) = connection.sendCommand(cmd)
+    if stderr:
+        print(stderr)
+        
+    #stop instance
+    instance.stop(_compute, instance_name, _project, zone)
+
+
+def postCompleteProcess(instance_name, zone):
+    """WHEN WES run is COMPLETE, will try to:
+    1. Run ingestion
+    2. stash versioning info
+    3. delete the instance"""
+    #TODO: ingestion
+    
+    #stash versioning info
+    int_ip = instance.get_instance_ip_from_name(_compute, instance_name, _project, zone)
+    connection = wes_automator.ssh(int_ip, _user, _key_file)
+    #STASH ALL analysis/ call - wes_automator_tx.sh,
+    #STASH min files from analysis, call - wes_automator_tx.min.sh,
+    cmd= "/home/taing/utils/wes_automator_tx.sh"
+    (status, stdout, stderr) = connection.sendCommand(cmd)
+    if stderr:
+        print(stderr)
+
+    instance.delete(_compute, instance_name, _project, zone)
+
 
 class Update(Resource):
     def put(self, instance_name):
@@ -115,12 +154,23 @@ class Update(Resource):
                 elif 'status' in request.form:
                     #Get either status = "COMPLETE" or "ERROR"
                     status = request.form['status']
-                    if status == "COMPLETE" or status == "ERROR":
+                    if status == "COMPLETE":
+                        wes_run.run_status = status
+                        wes_run.instance_status = "DELETED"
+                        #post-run process here, which includes 1. ingest, 2. stash, 3. delete instance
+                        print("Post-Procssing complete run %s" % wes_run.instance_name)
+                        postCompleteProcess(wes_run.instance_name,wes_run.zone)
+                        session.commit()
+
+                    elif status == "ERROR":
                         wes_run.run_status = status
                         wes_run.instance_status = "STOPPED"
                         #stop instance here
                         print("Stopping instance %s" % wes_run.instance_name)
-                        instance.stop(_compute, wes_run.instance_name, _project, wes_run.zone)
+                        stopInstanceProcess(wes_run.instance_name,wes_run.zone)
+                        session.commit()
+                    elif status in ['QUEUED', 'INITIALIZING', 'RUNNING']:
+                        wes_run.run_status = status
                         session.commit()
                     return wes_run.as_dict(), 201
                 else:
@@ -309,6 +359,7 @@ def parseConfig_xlsx(xlsx_file):
 #make _wes_runs global in scope so the web api can manipulate it
 #_wes_runs = {}
 
+#LEN- BUGGY! modify this!
 def time_convert(sec):
     #ref: https://www.codespeedy.com/how-to-create-a-stopwatch-in-python/
     mins = sec // 60
@@ -345,26 +396,7 @@ def printRunInfo():
         for run in runs:
             print(run)
 
-def main():
-    usage = "USAGE: %prog -i [wes monitor config xlsx sheet] -u [gcp username] -k [gcp keyfile] -s [setup only--only sets up the wes run, does not actually run wes]"
-    optparser = OptionParser(usage=usage)
-    optparser.add_option("-c", "--config", help="wes monitor config xlsx sheet")
-    optparser.add_option("-u", "--user", help="username")
-    optparser.add_option("-k", "--key_file", help="key file path")
-    optparser.add_option("-s", "--setup_only", help="When this param is set, then wes_automator.py does everything EXCEPT run WES; this is helpful when you want to manually run wes sub-modules and not the entire pipeline. (default: False)", default=False, action="store_true")
-    #TODO- connect port sent int to port used; for now just use 5000
-    #optparser.add_option("-p", "--port", help="port for flask server", default="5000")
-    
-    (options, args) = optparser.parse_args(sys.argv)
-    if not options.config or not os.path.exists(options.config):
-        print("Error: missing or non-existent wes monitor config xlsx file")
-        optparser.print_help()
-        sys.exit(-1)
-
-    if (not options.user or not options.key_file):
-        print("ERROR: missing user or google key path")
-        optparser.print_help()
-        sys.exit(-1)
+def main(options):
 
     #port = int(options.port)
     host_name = socket.gethostname()
@@ -409,10 +441,6 @@ def main():
             if next_run and coresAvail >= next_run.cores: #Available cores exceed next_run
                 print("Starting run %s" % next_run.instance_name)
                 wes_automator.run(next_run.config_file, options.user, options.key_file, options.setup_only, wes_monitor_ip_port)
-                #TODO: save the log of each wes_automator run
-                #cmd = "./wes_automator.py -c %s -u %s -k %s" % (next_run.config_file, options.user, options.key_file)
-                #print(cmd)
-                #subprocess.call(cmd.split(" "))
                 #NOTE: we're run_status here so that we can account for the
                 #cores-in use in the next loop of the while
                 #We also do it in the num_steps msg  #it's ok to be redundant
@@ -433,15 +461,37 @@ def main():
     #print runs one last time
     printRunInfo()
 
-def runFlask():
-    app.run(debug=True, use_reloader=False, port=5000, host='0.0.0.0')
+def runFlask(options):
+    app.run(debug=True, use_reloader=False, port=options.port, host='0.0.0.0')
 
 if __name__=='__main__':
+    usage = "USAGE: %prog -i [wes monitor config xlsx sheet] -u [gcp username] -k [gcp keyfile] -s [setup only--only sets up the wes run, does not actually run wes]"
+    optparser = OptionParser(usage=usage)
+    optparser.add_option("-c", "--config", help="wes monitor config xlsx sheet")
+    optparser.add_option("-u", "--user", help="username")
+    optparser.add_option("-k", "--key_file", help="key file path")
+    optparser.add_option("-s", "--setup_only", help="When this param is set, then wes_automator.py does everything EXCEPT run WES; this is helpful when you want to manually run wes sub-modules and not the entire pipeline. (default: False)", default=False, action="store_true")
+    optparser.add_option("-p", "--port", help="port for flask server", default="5000")
+    
+    (options, args) = optparser.parse_args(sys.argv)
+    if not options.config or not os.path.exists(options.config):
+        print("Error: missing or non-existent wes monitor config xlsx file")
+        optparser.print_help()
+        sys.exit(-1)
+
+    if (not options.user or not options.key_file):
+        print("ERROR: missing user or google key path")
+        optparser.print_help()
+        sys.exit(-1)
+
+    #SET globals
+    _user = options.user
+    _key_file = options.key_file
     #Method to run Flask in a separate thread so we aren't blocking
     #ref https://raspberrypi.stackexchange.com/questions/113671/python-run-flask-webserver-parallel-from-main-code
     #But this doesn't work b/c sqlalchemy is not thread-safe!
     #ref: https://copdips.com/2019/05/using-python-sqlalchemy-session-in-multithreading.html
     #Run main
-    t1 = threading.Thread(target=main).start()
+    t1 = threading.Thread(target=main, args=(options,)).start()
     #Run Flask
-    t2 = threading.Thread(target=runFlask).start()
+    t2 = threading.Thread(target=runFlask, args=(options,)).start()
