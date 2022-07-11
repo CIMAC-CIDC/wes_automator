@@ -79,7 +79,8 @@ _wes_automator_template = "config.automator.template.yaml"
 _compute = googleapiclient.discovery.build('compute', 'v1')
 _project = "cidc-biofx"
 
-#these should GLOBALS be set in main fn 
+#these should GLOBALS be set in if __name__=='__main__' block:
+_wes_monitor_ip_port = None 
 _user = None
 _key_file = None
 
@@ -103,7 +104,9 @@ def stopInstanceProcess(instance_name, zone):
     (status, stdout, stderr) = connection.sendCommand(cmd)
     if stderr:
         print(stderr)
-        
+
+    #**NEED to give snakemake time to wrap up and release/unlock the wes dir
+    sleep(20) #wait 20secs
     #stop instance
     instance.stop(_compute, instance_name, _project, zone)
 
@@ -117,16 +120,30 @@ def postCompleteProcess(instance_name, zone):
     
     #stash versioning info
     int_ip = instance.get_instance_ip_from_name(_compute, instance_name, _project, zone)
+    #print(int_ip, _user, _key_file)
     connection = wes_automator.ssh(int_ip, _user, _key_file)
-    #STASH ALL analysis/ call - wes_automator_tx.sh,
-    #STASH min files from analysis, call - wes_automator_tx.min.sh,
-    cmd= "/home/taing/utils/wes_automator_tx.sh"
+    #NOTE: calling wes_automator_tx.monitor.sh <wes_monitor_ip_port> <min>
+    #the optional 2nd param is whether to stash ALL analysis (default) or just min
+    cmd= "/home/taing/utils/wes_automator_tx.monitor.sh %s" % _wes_monitor_ip_port    
+    print("postCompleteProcess: calling %s" % cmd)
     (status, stdout, stderr) = connection.sendCommand(cmd)
     if stderr:
         print(stderr)
 
-    instance.delete(_compute, instance_name, _project, zone)
+    #INSTEAD of deleting here, waiting for callback from wes_automator_tx.sh/wes_automator_tx.min.sh
+    #instance.delete(_compute, instance_name, _project, zone)
 
+def postCompleteCallback(wes_run):
+    """HANDLES the post COMPLETE callbacks from both ingestion and stashing
+    of results.  NOTE: both wes_run.transfer_status and 
+    wes_run.ingestion_status must be set to COMPLETE before we delete"""
+    #if wes_run.transfer_status == "COMPLETE" and wes_run.ingestion_status == "COMPLETE":
+    if wes_run.transfer_status == "COMPLETE":
+        print("DELETEING instance %s" % wes_run.instance_name)
+        #delete the instance- wait 20 secs for snakemake to wrap up
+        sleep(20)
+        #instance.stop(_compute, wes_run.instance_name, _project, wes_run.zone)
+        instance.delete(_compute,wes_run.instance_name, _project, wes_run.zone)
 
 class Update(Resource):
     def put(self, instance_name):
@@ -173,9 +190,25 @@ class Update(Resource):
                         wes_run.run_status = status
                         session.commit()
                     return wes_run.as_dict(), 201
+                elif 'transfer_status' in request.form:
+                    #Get either status = "COMPLETE" or "ERROR'
+                    tx_status = request.form['transfer_status']
+                    if tx_status == "COMPLETE":
+                        #TODO save transfer_status to the db
+                        wes_run.transfer_status = "COMPLETE"
+                        postCompleteCallback(wes_run)
+                        session.commit()
+                    elif tx_status == "ERROR":
+                        wes_run.transfer_status = "ERROR"
+                        #STOP the instance
+                        #wait 10 secs for snakemake to cleanup and unlock dir
+                        print("Stopping instance %s" % wes_run.instance_name)
+                        stopInstanceProcess(wes_run.instance_name,wes_run.zone)
+                        session.commit()
+                    return wes_run.as_dict(), 201
                 else:
                     #malformed request
-                    abort(400, message="UPDATE: missing parameters num_steps, step_count, or status")
+                    abort(400, message="UPDATE: missing parameters num_steps, step_count, status, transfer_status")
             else:
                 abort(404, message="UPDATE: instance %s does not exists in db" % instance_name)
             
@@ -210,6 +243,8 @@ class WesRun(db.Model):
     #Status info
     instance_status = db.Column(db.String(100), nullable=False, default="STOPPED")  #{STOPPED, STARTED}
     run_status = db.Column(db.String(100), nullable=False, default="QUEUED") #{QUEUED, INITIALIZING, RUNNING, COMPLETED, ERROR}
+    ingestion_status = db.Column(db.String(100), nullable=False, default="NOTSTARTED") #{NOTSTARTED, COMPLETE, ERROR}
+    transfer_status = db.Column(db.String(100), nullable=False, default="NOTSTARTED") #{NOTSTARTED, COMPLETE, ERROR}
     num_steps = db.Column(db.Integer, nullable=False, default=1)  #total number of wes steps
     step_count = db.Column(db.Integer, nullable=False, default=0)  #how many steps have completed
 
@@ -398,11 +433,6 @@ def printRunInfo():
 
 def main(options):
 
-    #port = int(options.port)
-    host_name = socket.gethostname()
-    wes_monitor_ip_port = "%s:5000" % socket.gethostbyname(host_name)
-    print("Wes monitor listening on: %s" % wes_monitor_ip_port)
-
     #Check if the db exists; create initial db if not
     if not os.path.exists(_db_filename):
         db.create_all()
@@ -440,7 +470,7 @@ def main(options):
             coresAvail = _max_cores - coresInUse
             if next_run and coresAvail >= next_run.cores: #Available cores exceed next_run
                 print("Starting run %s" % next_run.instance_name)
-                wes_automator.run(next_run.config_file, options.user, options.key_file, options.setup_only, wes_monitor_ip_port)
+                wes_automator.run(next_run.config_file, options.user, options.key_file, options.setup_only, _wes_monitor_ip_port)
                 #NOTE: we're run_status here so that we can account for the
                 #cores-in use in the next loop of the while
                 #We also do it in the num_steps msg  #it's ok to be redundant
@@ -485,6 +515,10 @@ if __name__=='__main__':
         sys.exit(-1)
 
     #SET globals
+    host_name = socket.gethostname()
+    _wes_monitor_ip_port = "%s:5000" % socket.gethostbyname(host_name)
+    print("Wes monitor listening on: %s" % _wes_monitor_ip_port)
+
     _user = options.user
     _key_file = options.key_file
     #Method to run Flask in a separate thread so we aren't blocking
