@@ -391,17 +391,20 @@ def parseConfig_xlsx(xlsx_file):
     #print(rows)
     return rows
 
-#make _wes_runs global in scope so the web api can manipulate it
-#_wes_runs = {}
+def time_convert(time_diff_sec):
+    """roughly based off of 
+    ref: https://www.codespeedy.com/how-to-create-a-stopwatch-in-python/
+    but that is so buggy we had to fix it and the new fn looks nothing 
+    like the old!"""
+    _secInHr = 3600.0
+    hours = math.floor(time_diff_sec / _secInHr)
+    remainder = time_diff_sec - (hours * _secInHr)
+    mins = math.floor(remainder / 60.0)
+    sec = math.floor(remainder - mins * 60.0)
 
-#LEN- BUGGY! modify this!
-def time_convert(sec):
-    #ref: https://www.codespeedy.com/how-to-create-a-stopwatch-in-python/
-    mins = sec // 60
-    #sec = str(math.floor(sec % 60)).zfill(2) #try to pad it with zeros
-    sec = math.floor(sec % 60)
-    hours = mins // 60
-    return("{0}:{1}:{2}".format(int(hours),int(mins),sec))
+    ret = ":".join(map(lambda x: str(x).zfill(2), [hours, mins, sec]))
+    #print(ret)
+    return ret
 
 def allRunsCompleteOrErr(session):
     """Returns True iff all wes runs run_status are all COMPLETE or ERROR
@@ -458,7 +461,6 @@ def main(options):
             #print(tmp)
 
     start_time = time.time()
-    num_cores_used = 0
     _max_cores = 320 #set lower than 500 to account for other users/instances
     _sleep_time = 20 #sec
     
@@ -476,15 +478,16 @@ def main(options):
                 #We also do it in the num_steps msg  #it's ok to be redundant
                 next_run.run_status = "INITIALIZING"
                 session.commit()
-                
-            #print elapsed time
-            now = time.time()
-            time_msg = "Elapsed time %s" % time_convert(now - start_time)
-            coresAvail_msg = "Cores avail %s" % coresAvail
-            coresInUse_msg = "Cores in use %s" % coresInUse
-            print("\t".join([time_msg, coresAvail_msg, coresInUse_msg]))
-            #print the runs
-            printRunInfo()
+
+            #TURNING OFF PRINTOUTS b/c this will be handled by wes_monitor_viewer.py
+            # #print elapsed time
+            # now = time.time()
+            # time_msg = "Elapsed time %s" % time_convert(now - start_time)
+            # coresAvail_msg = "Cores avail %s" % coresAvail
+            # coresInUse_msg = "Cores in use %s" % coresInUse
+            # print("\t".join([time_msg, coresAvail_msg, coresInUse_msg]))
+            # #print the runs
+            # printRunInfo()
             sleep(_sleep_time) #refresh every 20secs
 
     print("All runs complete\n\n")
