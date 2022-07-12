@@ -16,7 +16,7 @@ import googleapiclient.discovery
 import paramiko
 #from paramiko import client
 
-import ruamel.yaml
+from ruamel.yaml import YAML
 
 import instance
 import disk
@@ -281,8 +281,9 @@ def transferRawFiles_local(samples, ssh_conn, sub_dir, wes_dir='/mnt/ssd/wes'):
 def run(opt_config, opt_user, opt_key_file, opt_setup_only=False, wes_monitor_ip_port=None):
     """WES Automator main fn"""
     # PARSE the yaml file
+    yaml = YAML()
     config_f = open(opt_config)
-    config = ruamel.yaml.round_trip_load(config_f.read())
+    config = yaml.load(config_f)
     config_f.close()
 
     #CHECK config
@@ -381,7 +382,7 @@ def run(opt_config, opt_user, opt_key_file, opt_setup_only=False, wes_monitor_ip
     # parse the wes_config.yaml template
     #NOTE: using the local version of the config
     wes_config_f = open('wes_config.local.yaml')
-    wes_config = ruamel.yaml.round_trip_load(wes_config_f.read())
+    wes_config = yaml.load(wes_config_f)
     wes_config_f.close()
     
     # SET the config to the samples dictionary we built up
@@ -417,7 +418,7 @@ def run(opt_config, opt_user, opt_key_file, opt_setup_only=False, wes_monitor_ip
     print("writing %s" % (".config.%s.yaml" % salt))
     out = open(".config.%s.yaml" % salt,"w")
     #NOTE: this writes the comments for the metasheet as well, but ignore it
-    ruamel.yaml.round_trip_dump(wes_config, out)
+    yaml.dump(wes_config, out)
     out.close()
 
     # METASHEET.csv

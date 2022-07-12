@@ -72,6 +72,19 @@ samples:
     - gs://mybucket/data/R1-1-FP_HHTFLDSXX_R1.fastq.gz
     - gs://mybucket/data/R1-1-FP_HHTFLDSXX_R2.fastq.gz
 
+# (Optional) Define any RNA-seq expression data associated with the TUMOR
+# samples only.  Currently, only expression results from Salmon are supported.
+# The sample names in this section must match the same names used in the
+# previous section.
+# BOTH bam and expression files are required
+#rna:
+#  mocha2-Run1-pt1-FF-Tumor:
+#    bam_file: gs://mybucket/data/mocha2-Run1-pt1-FF-Tumor.sorted.bam
+#    expression_file: gs://mybucket/data/mocha2-Run1-pt1-FF-Tumor.quant.sf
+#  mocha2-Run1-pt1-FFPE-Tumor:
+#    bam_file: gs://mybucket/data/mocha2-Run1-pt1-FFPE-Tumor.sorted.bam
+#    expression_file: gs://mybucket/data/mocha2-Run1-pt1-FFPE-Tumor.quant.sf
+
 # metahseet- Group the samples into Tumor/Normal "runs"
 # each run should have a name, e.g. run_1:
 # then under each run, define a tumor and a normal sample
@@ -88,15 +101,3 @@ metasheet:
     normal: mocha2-Run1-pt1-Normal
     tumor: mocha2-Run1-pt1-FFPE-Tumor
 
-# (Optional) Define any RNA-seq expression data associated with the TUMOR
-# samples only.  Currently, only expression results from Salmon are supported.
-# The sample names in this section must match the same names used in the
-# previous section.
-# BOTH bam and expression files are required
-#rna:
-#  mocha2-Run1-pt1-FF-Tumor:
-#    bam_file: gs://mybucket/data/mocha2-Run1-pt1-FF-Tumor.sorted.bam
-#    expression_file: gs://mybucket/data/mocha2-Run1-pt1-FF-Tumor.quant.sf
-#  mocha2-Run1-pt1-FFPE-Tumor:
-#    bam_file: gs://mybucket/data/mocha2-Run1-pt1-FFPE-Tumor.sorted.bam
-#    expression_file: gs://mybucket/data/mocha2-Run1-pt1-FFPE-Tumor.quant.sf

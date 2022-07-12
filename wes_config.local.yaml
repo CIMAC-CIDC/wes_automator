@@ -78,6 +78,36 @@ trim_soft_clip: False
 # Default: tumor_only: False
 tumor_only: False
 
+# Skip modules in this WES run  by uncommenting  the skipped modules header and
+# any lines containing modules that you would like to skip.
+#skipped_modules:
+#  - "clonality"
+#  - "copynumber"
+#  - "cnvkit"
+#  - "msisensor2"
+#  - "neoantigen"
+#  - "purity"
+#  - "tcellextrect"
+
+# (Optional) Define any RNA-seq expression data associated with the TUMOR
+# samples only.  Currently, only expression results from Salmon are supported.
+# The sample names in this section must match the same names used in the
+# previous section.
+# BOTH bam and expression files are required
+#rna:
+#  SAMPLE1:
+#    bam_file: rna_data/sample1.sorted.bam
+#    expression_file: rna_data/sample1.quant.sf
+#  SAMPLE2:
+#    bam_file: rna_data/sample2.sorted.bam
+#    expression_file: rna_data/sample2.quant.sf
+
+#The following are optional meta information that will be stored in the report
+#wes_run_info:
+#  wes_commit: e4b875
+#  wes_ref_snapshot: wes-human-ref-ver1-3
+#  wes_image: wes-ver2-1
+
 # DEFINE the samples- each sample should have a name, e.g. SAMPLE1
 # and a path to the input file, e.g. data/sample1.fastq.gz
 # VALID INPUTS: fastq, fastq.gz, bam
@@ -95,23 +125,3 @@ samples:
     - data/sample1.input.fastq.gz
   SAMPLE2:
     - data/sample2.fastq.gz
-
-# (Optional) Define any RNA-seq expression data associated with the TUMOR
-# samples only.  Currently, only expression results from Salmon are supported.
-# The sample names in this section must match the same names used in the
-# previous section.
-# BOTH bam and expression files are required
-#rna:
-#  SAMPLE1:
-#    bam_file: rna_data/sample1.sorted.bam
-#    expression_file: rna_data/sample1.quant.sf
-#  SAMPLE2:
-#    bam_file: rna_data/sample2.sorted.bam
-#    expression_file: rna_data/sample2.quant.sf
-
-
-#The following are optional meta information that will be stored in the report
-#wes_run_info:
-#  wes_commit: e4b875
-#  wes_ref_snapshot: wes-human-ref-ver1-3
-#  wes_image: wes-ver2-1
