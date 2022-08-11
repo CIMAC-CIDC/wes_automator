@@ -357,6 +357,7 @@ class WesRun(db.Model):
         yaml.dump(config, out)
         out.close()
         self.config_file = output_path
+        checkConfigMonitor(config) #NEW PRE-FLIGHT CHECK!
 
     def __repr__(self):
         #return str(self.__dict__)
@@ -367,6 +368,63 @@ class WesRun(db.Model):
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
+def checkConfigMonitor(wes_auto_config): # different from automator check since to allow proper exiting
+    """Checks each field in the  
+    INPUT config file parsed as a dictionary
+    returns True if everything is ok
+    otherwise exits!
+    """
+    print("checking config for", wes_auto_config['instance_name'])
+
+    #TODO ADD FIELD SPECIFIC RULES? such as letters and numbers only for wes_commit
+
+    # not rna
+    required_fields = ["instance_name", "cores", "disk_size",
+                       "google_bucket_path","wes_commit","image",
+                       "wes_ref_snapshot", "somatic_caller", "cimac_center",
+                       "trim_soft_clip", "tumor_only", "zone", "samples",
+                       "metasheet"]
+    #optional_fields = ['wes_commit'] #not used below!!
+
+    missing = []
+    for f in required_fields:
+        print("%s: %s %s" % (f, wes_auto_config[f], type(wes_auto_config[f])))
+        #if not f in wes_auto_config or not wes_auto_config[f]: # this makes no sense since values can be false 
+        if (not f in wes_auto_config) or (wes_auto_config[f] is None) or (wes_auto_config[f] == "None"): #some fields are forced into strings 
+            missing.append(f)
+
+    #check if the sample fastq/bam files are valid
+    invalid_bucket_paths = []
+    print("Checking the sample file paths...")
+    wes_automator.checkConfig_bucketPath(wes_auto_config['samples'], invalid_bucket_paths)
+
+    rna = wes_auto_config.get('rna', None)
+    if rna:
+        print("Checking the RNA-seq file paths...")
+        wes_automator.checkConfig_bucketPath(rna, invalid_bucket_paths)
+
+    if invalid_bucket_paths:
+        print("Some sample file bucket files are invalid or do not exist, please correct this.")
+        for f in invalid_bucket_paths:
+            print(f)
+        sys.exit(1)
+
+    #NOTE: can add additional checks like google_bucket_path is in the form
+    #of 'gs://...' etc.  but this is a start
+
+    if missing:
+        print("ERROR: Please define these required params in the automator config file:\n%s" % ", ".join(missing))
+        # print(t2)
+        # print(t2.is_alive())
+        # print(threading.enumerate())
+        @app.get('/shutdown')
+        def shutdown():
+            shutdown_server()
+            return 'Server shutting down...'
+        sys.exit(1)
+    else:
+        return True
+   
 def parseConfig_xlsx(xlsx_file):
     """parsese the xlsx config file and returns a list of dictionaries where
     each dictionary captures the information for each row"""
