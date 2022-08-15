@@ -37,6 +37,7 @@ import socket
 from time import sleep
 import math
 from optparse import OptionParser
+from datetime import datetime
 
 import googleapiclient.discovery
 
@@ -157,6 +158,7 @@ class Update(Resource):
                     wes_run.num_steps = num_steps
                     wes_run.run_status = "RUNNING"
                     wes_run.instance_status = "STARTED"
+                    wes_run.run_start_time = datetime.now() # NEW START TIME (implemented from monitor's point of view)
                     session.commit()
                     return wes_run.as_dict(), 201
                 elif 'step_count' in request.form:
@@ -173,7 +175,8 @@ class Update(Resource):
                     status = request.form['status']
                     if status == "COMPLETE":
                         wes_run.run_status = status
-                        wes_run.instance_status = "DELETED"
+                        wes_run.instance_status = "DELETED" #ARE WE SURE ABOUT THIS IF DELETION HAS NOT HAPPENED YET?
+                        wes_run.stop_time= datetime.now()# not counting transfer time here
                         #post-run process here, which includes 1. ingest, 2. stash, 3. delete instance
                         print("Post-Procssing complete run %s" % wes_run.instance_name)
                         postCompleteProcess(wes_run.instance_name,wes_run.zone)
@@ -249,9 +252,10 @@ class WesRun(db.Model):
     step_count = db.Column(db.Integer, nullable=False, default=0)  #how many steps have completed
 
     #LEN TODO:
-    #run_start_time = db.Column(db.DateTime, nullable=True) #when the run was started--on num_steps msg
+    run_start_time = db.Column(db.DateTime, nullable=True) #when the run was started--on num_steps msg
+    #elapsed_time=db.Column(db.DateTime, nullable=True)
     #last_checkin = db.Column(db.DateTime, nullable=True) #last message from instance, i.e. num_steps or step_count
-    #stop_time = db.Column(db.DateTime, nullable=True) #if status mssage of COMPLETE or ERROR recieved, we stop the clock on the run
+    stop_time = db.Column(db.DateTime, nullable=True) #if status mssage of COMPLETE or ERROR recieved, we stop the clock on the run
     
     def __init__(self, tumor_cimac_id, normal_cimac_id, google_bucket_path, tumor_fastq_path_pair1, tumor_fastq_path_pair2, normal_fastq_path_pair1, normal_fastq_path_pair2, rna_bam_file, rna_expression_file, cimac_center, cores, disk_size, wes_commit, image, wes_ref_snapshot, somatic_caller, trim_soft_clip, tumor_only, zone):
     #def __init__(self, **kwargs):
@@ -361,12 +365,27 @@ class WesRun(db.Model):
 
     def __repr__(self):
         #return str(self.__dict__)
-        return "%s\t%s\t%s/%s" % (self.instance_name, self.run_status, str(self.step_count), str(self.num_steps))
+        if self.run_start_time is not None:
+            #run_start = time.asctime(time.gmtime(self.run_start_time))
+            run_start= self.run_start_time.isoformat(timespec="seconds", sep= " ")
+            elapsed_time = time_convert((datetime.now() - self.run_start_time).total_seconds())
+        else:
+            run_start=None
+            elapsed_time=None
+        if self.stop_time is not None:
+            run_stop=self.stop_time.isoformat(timespec="seconds", sep= " ")
+        else:
+            run_stop = None
+        
+        return "%s\t%s\t%s/%s\t%s\t%s\t%s" % (self.instance_name, self.run_status, str(self.step_count), str(self.num_steps), run_start, run_stop, elapsed_time) # add elapsed time here 
+
+        #return "%s\t%s\t%s/%s" % (self.instance_name, self.run_status, str(self.step_count), str(self.num_steps))
 
     #serialize the object to json-
     #ref: https://stackoverflow.com/questions/5022066/how-to-serialize-sqlalchemy-result-to-json
     def as_dict(self):
-       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        #return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        return {c.name: str(getattr(self, c.name)) for c in self.__table__.columns} # supports datetime per comment in same stackoverflow
 
 def checkConfigMonitor(wes_auto_config): # different from automator check since to allow proper exiting
     """Checks each field in the  
@@ -414,14 +433,6 @@ def checkConfigMonitor(wes_auto_config): # different from automator check since 
 
     if missing:
         print("ERROR: Please define these required params in the automator config file:\n%s" % ", ".join(missing))
-        # print(t2)
-        # print(t2.is_alive())
-        # print(threading.enumerate())
-        @app.get('/shutdown')
-        def shutdown():
-            shutdown_server()
-            return 'Server shutting down...'
-        sys.exit(1)
     else:
         return True
    

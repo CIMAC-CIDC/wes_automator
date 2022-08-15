@@ -30,7 +30,7 @@ def main():
     db_manager.init_session_factory()
 
     start_time = time.time()
-    _max_cores = 320
+    _max_cores = 320 # CHANGE THIS TO GRAB FROM WES MONITOR
     _sleep_time = 2 #sec
     with db_manager.ManagedSession() as session:
         while not wes_monitor.allRunsCompleteOrErr(session):
