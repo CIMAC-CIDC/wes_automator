@@ -365,21 +365,20 @@ class WesRun(db.Model):
 
     def __repr__(self):
         #return str(self.__dict__)
-        if self.run_start_time is not None:
-            #run_start = time.asctime(time.gmtime(self.run_start_time))
+        if self.run_start_time:
             run_start= self.run_start_time.isoformat(timespec="seconds", sep= " ")
             elapsed_time = time_convert((datetime.now() - self.run_start_time).total_seconds())
         else:
             run_start=None
             elapsed_time=None
-        if self.stop_time is not None:
+        if self.stop_time:
             run_stop=self.stop_time.isoformat(timespec="seconds", sep= " ")
         else:
             run_stop = None
         
-        return "%s\t%s\t%s/%s\t%s\t%s\t%s" % (self.instance_name, self.run_status, str(self.step_count), str(self.num_steps), run_start, run_stop, elapsed_time) # add elapsed time here 
+        return "%s\t%s\t%s/%s\t%s\t%s\t%s" % (self.instance_name, self.run_status, str(self.step_count), str(self.num_steps), run_start, run_stop, elapsed_time)
 
-        #return "%s\t%s\t%s/%s" % (self.instance_name, self.run_status, str(self.step_count), str(self.num_steps))
+
 
     #serialize the object to json-
     #ref: https://stackoverflow.com/questions/5022066/how-to-serialize-sqlalchemy-result-to-json
