@@ -573,6 +573,7 @@ if __name__=='__main__':
     optparser.add_option("-k", "--key_file", help="key file path")
     optparser.add_option("-s", "--setup_only", help="When this param is set, then wes_automator.py does everything EXCEPT run WES; this is helpful when you want to manually run wes sub-modules and not the entire pipeline. (default: False)", default=False, action="store_true")
     optparser.add_option("-p", "--port", help="port for flask server", default="5000")
+    optparser.add_option("--makeAutomatorConfigs", help="makes the wes automator configs for each run and then exits", default=False, action="store_true")
     
     (options, args) = optparser.parse_args(sys.argv)
     if not options.config or not os.path.exists(options.config):
@@ -584,6 +585,15 @@ if __name__=='__main__':
         print("ERROR: missing user or google key path")
         optparser.print_help()
         sys.exit(-1)
+
+    #check if we're just making automator configs
+    if options.makeAutomatorConfigs:
+        #parse the config
+        wes_runs_configs = parseConfig_xlsx(options.config)
+        for wes_run in wes_runs_configs:
+            tmp = WesRun(**wes_run) #new WesRun object
+        print("WES automator configs generated, exiting")
+        sys.exit()
 
     #SET globals
     host_name = socket.gethostname()
