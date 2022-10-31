@@ -436,7 +436,7 @@ def checkConfigMonitor(wes_auto_config): # different from automator check since 
         return True
    
 def parseConfig_xlsx(xlsx_file):
-    """parsese the xlsx config file and returns a list of dictionaries where
+    """parses the xlsx config file and returns a list of dictionaries where
     each dictionary captures the information for each row"""
     #try to load the workbook:
     wb = load_workbook(xlsx_file)
@@ -458,6 +458,25 @@ def parseConfig_xlsx(xlsx_file):
                 rows.append(tmp)
     #print(rows)
     return rows
+
+def parseConfig_csv(csv_file):
+    """parses a csv config file and returns a list of dictionaries where
+    each dictionary captures the information for each row"""
+    rows = []
+    with open(csv_file) as f:
+        cols = f.readline().strip().split(",")
+        #NOTE: if the csv comes from Excel, there's a '\ufeff' string at the
+        #start of first col, replace that
+        cols = list(map(lambda x: x.replace('\ufeff', ''), cols))
+        #print(cols)
+        for l in f:
+            row = dict(zip(cols, l.strip().split(",")))
+            #check for empty row
+            if any(row.values()):
+                rows.append(row)
+    #print(rows)
+    return rows
+
 
 def time_convert(time_diff_sec):
     """roughly based off of 
@@ -509,7 +528,10 @@ def main(options):
         db.create_all()
         
     #parse the config
-    wes_runs_configs = parseConfig_xlsx(options.config)
+    if options.config.endswith(".csv"):
+        wes_runs_configs = parseConfig_csv(options.config)
+    else:
+        wes_runs_configs = parseConfig_xlsx(options.config)
     #print(wes_runs_configs)
     
     #for each run, 1. add run info to db and 2. generate a config file
@@ -589,7 +611,11 @@ if __name__=='__main__':
     #check if we're just making automator configs
     if options.makeAutomatorConfigs:
         #parse the config
-        wes_runs_configs = parseConfig_xlsx(options.config)
+        if options.config.endswith(".csv"):
+            wes_runs_configs = parseConfig_csv(options.config)
+        else:
+            wes_runs_configs = parseConfig_xlsx(options.config)
+
         for wes_run in wes_runs_configs:
             tmp = WesRun(**wes_run) #new WesRun object
         print("WES automator configs generated, exiting")
