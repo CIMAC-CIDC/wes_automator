@@ -416,6 +416,14 @@ def checkConfigMonitor(wes_auto_config): # different from automator check since 
     print("Checking the sample file paths...")
     wes_automator.checkConfig_bucketPath(wes_auto_config['samples'], invalid_bucket_paths)
 
+    # check for missing normal info if tumor only is false
+    if (not wes_auto_config['tumor_only']):
+        sample_name = wes_auto_config['instance_name'].upper().replace("-", ".")
+        if [] in wes_auto_config['samples'].values():
+            raise TypeError("%s is defined as a tumor-normal sample but normal sample files are not provided. Are you sure this is a tumor-normal run?" % (sample_name))
+        if wes_auto_config['metasheet'][sample_name]["normal"] is None:
+            raise TypeError("%s is defined as a tumor-normal sample but no normal sample name was provided. Are you sure this is a tumor-normal run?" % (sample_name))
+    
     rna = wes_auto_config.get('rna', None)
     if rna:
         print("Checking the RNA-seq file paths...")
@@ -471,6 +479,14 @@ def parseConfig_csv(csv_file):
         #print(cols)
         for l in f:
             row = dict(zip(cols, l.strip().split(",")))
+            # convert true and and false strings to bool
+            for key in row:
+                if row[key].upper() == "TRUE":
+                    row[key] = True
+                elif row[key].upper() == "FALSE":
+                    row[key] = False
+                elif row[key] == '':
+                    row[key] = None
             #check for empty row
             if any(row.values()):
                 rows.append(row)
